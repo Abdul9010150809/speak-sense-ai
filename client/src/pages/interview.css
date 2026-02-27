@@ -1,0 +1,816 @@
+/* interview.css - Professional Interview Page */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
+  background: #0a0c10;
+  color: #e5e7eb;
+}
+
+/* Interview Page */
+.interview-page {
+  min-height: 100vh;
+  position: relative;
+  background: radial-gradient(circle at 10% 20%, #0a1928 0%, #030614 100%);
+  padding: 2rem;
+}
+
+/* Background Elements */
+.interview-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+  z-index: 0;
+}
+
+.bg-grid {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    linear-gradient(rgba(0, 100, 200, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 100, 200, 0.05) 1px, transparent 1px);
+  background-size: 40px 40px;
+  animation: gridMove 30s linear infinite;
+}
+
+.bg-glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.15;
+}
+
+.glow-1 {
+  width: 500px;
+  height: 500px;
+  top: -200px;
+  right: -100px;
+  background: #0066cc;
+  animation: float1 20s ease-in-out infinite;
+}
+
+.glow-2 {
+  width: 450px;
+  height: 450px;
+  bottom: -200px;
+  left: -100px;
+  background: #4f46e5;
+  animation: float2 22s ease-in-out infinite;
+}
+
+/* Main Container */
+.interview-container {
+  position: relative;
+  z-index: 1;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+/* Header */
+.interview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+  padding: 1rem;
+  background: rgba(3, 6, 20, 0.6);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  border: 1px solid rgba(0, 100, 200, 0.2);
+}
+
+.back-link {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #99aacc;
+  text-decoration: none;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+}
+
+.back-link:hover {
+  color: #00ccff;
+  transform: translateX(-5px);
+}
+
+.back-icon {
+  font-size: 1.2rem;
+}
+
+.interview-header h1 {
+  background: linear-gradient(135deg, #ffffff, #99ccff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-size: 1.8rem;
+}
+
+.interview-timer {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: rgba(0, 100, 200, 0.2);
+  border-radius: 30px;
+  border: 1px solid rgba(0, 200, 255, 0.3);
+}
+
+.timer-icon {
+  font-size: 1.2rem;
+}
+
+.timer-text {
+  color: #00ccff;
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+/* Avatar Selection */
+.avatar-selection {
+  text-align: center;
+  padding: 2rem;
+  background: rgba(3, 6, 20, 0.6);
+  backdrop-filter: blur(10px);
+  border-radius: 30px;
+  border: 1px solid rgba(0, 100, 200, 0.2);
+}
+
+.avatar-selection h2 {
+  font-size: 2rem;
+  color: white;
+  margin-bottom: 0.5rem;
+}
+
+.avatar-selection p {
+  color: #99aacc;
+  margin-bottom: 2rem;
+}
+
+.avatars-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 2rem;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.avatar-card {
+  padding: 2rem;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  border: 2px solid transparent;
+}
+
+.avatar-card:hover {
+  transform: translateY(-10px);
+  border-color: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.5);
+}
+
+.avatar-icon-large {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+  filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.3));
+  animation: float 3s ease-in-out infinite;
+}
+
+.avatar-card h3 {
+  color: white;
+  font-size: 1.3rem;
+  margin-bottom: 0.3rem;
+}
+
+.avatar-role {
+  color: rgba(255, 255, 255, 0.8);
+  font-size: 0.9rem;
+  margin-bottom: 1.5rem;
+}
+
+.select-avatar-btn {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  padding: 0.5rem 1.5rem;
+  border-radius: 25px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-weight: 500;
+}
+
+.select-avatar-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.05);
+}
+
+/* Interview Session */
+.interview-session {
+  background: rgba(3, 6, 20, 0.6);
+  backdrop-filter: blur(10px);
+  border-radius: 30px;
+  border: 1px solid rgba(0, 100, 200, 0.2);
+  padding: 2rem;
+}
+
+.interview-main {
+  display: grid;
+  grid-template-columns: 1fr 350px;
+  gap: 2rem;
+}
+
+/* Video Area */
+.video-container {
+  position: relative;
+  background: #000;
+  border-radius: 20px;
+  overflow: hidden;
+  aspect-ratio: 16/9;
+}
+
+video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+video.video-off {
+  opacity: 0.5;
+}
+
+.video-off-placeholder {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  color: white;
+}
+
+.video-off-icon {
+  font-size: 3rem;
+  display: block;
+  margin-bottom: 1rem;
+}
+
+/* AI Avatar Overlay */
+.ai-avatar-overlay {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(10px);
+  padding: 0.8rem 1.2rem;
+  border-radius: 50px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.ai-avatar-small {
+  font-size: 2rem;
+}
+
+.ai-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  background: #10b981;
+  border-radius: 50%;
+  animation: pulse 2s infinite;
+}
+
+/* Video Controls */
+.video-controls {
+  position: absolute;
+  bottom: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 0.8rem;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(10px);
+  padding: 0.8rem;
+  border-radius: 50px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.control-btn {
+  width: 45px;
+  height: 45px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  font-size: 1.2rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.control-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.1);
+}
+
+.control-btn.active {
+  background: #f56565;
+}
+
+.control-btn.settings {
+  width: auto;
+  padding: 0 1.5rem;
+  border-radius: 25px;
+  gap: 0.5rem;
+}
+
+/* Chat Interface */
+.chat-container {
+  background: rgba(10, 20, 30, 0.8);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  height: 600px;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(0, 100, 200, 0.3);
+}
+
+.chat-header {
+  padding: 1rem;
+  border-bottom: 1px solid rgba(0, 100, 200, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.chat-avatar {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.chat-avatar-icon {
+  font-size: 2rem;
+  background: rgba(0, 100, 200, 0.2);
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.chat-avatar h3 {
+  color: white;
+  font-size: 1rem;
+  margin-bottom: 0.2rem;
+}
+
+.chat-avatar p {
+  color: #99aacc;
+  font-size: 0.85rem;
+}
+
+.switch-video-btn {
+  background: rgba(0, 100, 200, 0.2);
+  border: 1px solid rgba(0, 200, 255, 0.3);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.switch-video-btn:hover {
+  background: rgba(0, 150, 255, 0.3);
+}
+
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem;
+}
+
+.message {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  animation: slideIn 0.3s ease;
+}
+
+.message-avatar {
+  font-size: 1.5rem;
+  width: 35px;
+  height: 35px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 100, 200, 0.2);
+  border-radius: 50%;
+}
+
+.message-content {
+  flex: 1;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.8rem 1rem;
+  border-radius: 15px;
+  border: 1px solid rgba(0, 100, 200, 0.2);
+}
+
+.user-message .message-content {
+  background: linear-gradient(135deg, #0066cc, #4f46e5);
+  border-color: transparent;
+}
+
+.message-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.3rem;
+}
+
+.message-sender {
+  color: white;
+  font-weight: 500;
+  font-size: 0.9rem;
+}
+
+.message-time {
+  color: #99aacc;
+  font-size: 0.8rem;
+}
+
+.message-text {
+  color: #e5e7eb;
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+.chat-input-form {
+  display: flex;
+  gap: 0.5rem;
+  padding: 1rem;
+  border-top: 1px solid rgba(0, 100, 200, 0.3);
+}
+
+.chat-input {
+  flex: 1;
+  padding: 0.8rem 1rem;
+  background: rgba(0, 20, 40, 0.6);
+  border: 1px solid rgba(0, 100, 200, 0.3);
+  border-radius: 10px;
+  color: white;
+  font-size: 0.95rem;
+}
+
+.chat-input:focus {
+  outline: none;
+  border-color: #00ccff;
+}
+
+.send-btn {
+  padding: 0.8rem 1.5rem;
+  background: linear-gradient(135deg, #0066cc, #4f46e5);
+  border: none;
+  border-radius: 10px;
+  color: white;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.send-btn:hover {
+  transform: translateX(5px);
+  box-shadow: 0 5px 15px rgba(0, 100, 200, 0.4);
+}
+
+/* Sidebar */
+.interview-sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.current-question, .interview-info, .interview-tips {
+  background: rgba(10, 20, 30, 0.6);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  padding: 1.5rem;
+  border: 1px solid rgba(0, 100, 200, 0.2);
+}
+
+.current-question h3, .interview-info h3, .interview-tips h3 {
+  color: white;
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+}
+
+.question-box {
+  background: rgba(0, 50, 100, 0.3);
+  padding: 1rem;
+  border-radius: 12px;
+  margin-bottom: 1rem;
+  border-left: 4px solid #00ccff;
+}
+
+.question-box p {
+  color: #e5e7eb;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.question-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.question-progress span {
+  color: #99aacc;
+  font-size: 0.85rem;
+}
+
+.progress-bar {
+  height: 6px;
+  background: rgba(0, 100, 200, 0.2);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #00ccff, #4f46e5);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.info-item {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid rgba(0, 100, 200, 0.1);
+}
+
+.info-item:last-child {
+  border-bottom: none;
+}
+
+.info-label {
+  color: #99aacc;
+  font-size: 0.9rem;
+}
+
+.info-value {
+  color: white;
+  font-weight: 500;
+}
+
+.interview-tips ul {
+  list-style: none;
+}
+
+.interview-tips li {
+  color: #e5e7eb;
+  font-size: 0.9rem;
+  margin-bottom: 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.end-interview-btn {
+  background: linear-gradient(135deg, #dc2626, #b91c1c);
+  color: white;
+  border: none;
+  border-radius: 15px;
+  padding: 1rem;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.end-interview-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px -5px rgba(220, 38, 38, 0.4);
+}
+
+/* Results Screen */
+.results-screen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 500px;
+}
+
+.results-card {
+  background: rgba(3, 6, 20, 0.8);
+  backdrop-filter: blur(10px);
+  border-radius: 30px;
+  padding: 3rem;
+  text-align: center;
+  border: 1px solid rgba(0, 200, 255, 0.3);
+  max-width: 500px;
+  width: 100%;
+  animation: scaleIn 0.5s ease;
+}
+
+.results-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+  animation: bounce 2s infinite;
+}
+
+.results-card h2 {
+  color: white;
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.results-card p {
+  color: #99aacc;
+  margin-bottom: 2rem;
+}
+
+.results-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  background: rgba(0, 50, 100, 0.2);
+  border-radius: 20px;
+}
+
+.result-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.stat-label {
+  color: #99aacc;
+  font-size: 0.8rem;
+}
+
+.stat-value {
+  color: white;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.results-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.view-results-btn {
+  background: linear-gradient(135deg, #00ccff, #4f46e5);
+  color: white;
+  text-decoration: none;
+  padding: 1rem;
+  border-radius: 15px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.view-results-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px -5px rgba(0, 200, 255, 0.4);
+}
+
+.new-interview-btn {
+  background: transparent;
+  color: white;
+  border: 2px solid rgba(0, 200, 255, 0.3);
+  padding: 1rem;
+  border-radius: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.new-interview-btn:hover {
+  background: rgba(0, 200, 255, 0.1);
+  border-color: #00ccff;
+}
+
+/* Animations */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-20px); }
+}
+
+@keyframes float1 {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(50px, 40px); }
+}
+
+@keyframes float2 {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(-40px, -30px); }
+}
+
+@keyframes gridMove {
+  from { transform: translate(0, 0); }
+  to { transform: translate(40px, 40px); }
+}
+
+/* Responsive Design */
+@media (max-width: 1024px) {
+  .interview-main {
+    grid-template-columns: 1fr;
+  }
+  
+  .video-container {
+    aspect-ratio: 16/9;
+  }
+}
+
+@media (max-width: 768px) {
+  .interview-page {
+    padding: 1rem;
+  }
+  
+  .avatars-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  
+  .interview-header {
+    flex-direction: column;
+    gap: 1rem;
+    text-align: center;
+  }
+  
+  .results-stats {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 576px) {
+  .avatars-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .video-controls {
+    flex-wrap: wrap;
+    width: 90%;
+  }
+  
+  .control-btn.settings {
+    width: 100%;
+  }
+}

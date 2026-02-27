@@ -1,0 +1,697 @@
+/* history.css - Professional History Page with Dark Navy Theme */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', sans-serif;
+  background: #0a0c10;
+  color: #e5e7eb;
+}
+
+/* History Page */
+.history-page {
+  min-height: 100vh;
+  position: relative;
+  background: radial-gradient(circle at 10% 20%, #0a1928 0%, #030614 100%);
+  padding: 2rem;
+}
+
+/* Background Elements */
+.history-bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+  z-index: 0;
+}
+
+.bg-grid {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    linear-gradient(rgba(0, 100, 200, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 100, 200, 0.05) 1px, transparent 1px);
+  background-size: 40px 40px;
+  animation: gridMove 30s linear infinite;
+}
+
+.bg-glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.15;
+}
+
+.glow-1 {
+  width: 500px;
+  height: 500px;
+  top: -200px;
+  right: -100px;
+  background: #0066cc;
+  animation: float1 20s ease-in-out infinite;
+}
+
+.glow-2 {
+  width: 450px;
+  height: 450px;
+  bottom: -200px;
+  left: -100px;
+  background: #4f46e5;
+  animation: float2 22s ease-in-out infinite;
+}
+
+.glow-3 {
+  width: 400px;
+  height: 400px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: #0891b2;
+  animation: float3 25s ease-in-out infinite;
+}
+
+/* Main Container */
+.history-container {
+  position: relative;
+  z-index: 1;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Header */
+.history-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+  padding: 1rem 1.5rem;
+  background: rgba(3, 6, 20, 0.6);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  border: 1px solid rgba(0, 100, 200, 0.2);
+}
+
+.back-link {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #99aacc;
+  text-decoration: none;
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+}
+
+.back-link:hover {
+  color: #00ccff;
+  transform: translateX(-5px);
+}
+
+.back-icon {
+  font-size: 1.2rem;
+}
+
+.history-header h1 {
+  background: linear-gradient(135deg, #ffffff, #99ccff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  font-size: 1.8rem;
+}
+
+.header-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+.export-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.2rem;
+  border-radius: 12px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: none;
+  background: rgba(0, 100, 200, 0.2);
+  color: white;
+  border: 1px solid rgba(0, 200, 255, 0.3);
+}
+
+.export-btn:hover {
+  background: rgba(0, 150, 255, 0.3);
+  transform: translateY(-2px);
+}
+
+/* Statistics Cards */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.stat-card {
+  background: rgba(10, 20, 30, 0.6);
+  border: 1px solid rgba(0, 100, 200, 0.2);
+  border-radius: 16px;
+  padding: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  transition: all 0.3s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-5px);
+  border-color: rgba(0, 200, 255, 0.3);
+  box-shadow: 0 10px 30px -10px rgba(0, 100, 200, 0.3);
+}
+
+.stat-icon {
+  font-size: 2.5rem;
+  background: rgba(0, 100, 200, 0.2);
+  width: 60px;
+  height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+}
+
+.stat-details {
+  flex: 1;
+}
+
+.stat-label {
+  display: block;
+  color: #99aacc;
+  font-size: 0.85rem;
+  margin-bottom: 0.3rem;
+}
+
+.stat-value {
+  display: block;
+  color: white;
+  font-size: 1.8rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+/* Filters Section */
+.filters-section {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+
+.filter-group {
+  flex: 1;
+  min-width: 200px;
+}
+
+.filter-group label {
+  display: block;
+  color: #99aacc;
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+}
+
+.filter-select {
+  width: 100%;
+  padding: 0.8rem 1rem;
+  background: rgba(10, 20, 30, 0.6);
+  border: 1px solid rgba(0, 100, 200, 0.3);
+  border-radius: 12px;
+  color: white;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.filter-select:hover {
+  border-color: rgba(0, 200, 255, 0.5);
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: #00ccff;
+  box-shadow: 0 0 0 3px rgba(0, 200, 255, 0.1);
+}
+
+.filter-select option {
+  background: #0a1928;
+  color: white;
+}
+
+/* Interviews List */
+.interviews-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.interview-card {
+  background: rgba(10, 20, 30, 0.6);
+  border: 1px solid rgba(0, 100, 200, 0.2);
+  border-radius: 20px;
+  padding: 1.5rem;
+  transition: all 0.3s ease;
+}
+
+.interview-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(0, 200, 255, 0.3);
+  box-shadow: 0 10px 30px -10px rgba(0, 100, 200, 0.3);
+}
+
+/* Interview Header */
+.interview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid rgba(0, 100, 200, 0.2);
+}
+
+.interview-title h3 {
+  color: white;
+  font-size: 1.3rem;
+  margin-bottom: 0.3rem;
+}
+
+.company-name {
+  color: #00ccff;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.company-name::before {
+  content: "🏢";
+  font-size: 0.9rem;
+}
+
+.interview-score {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+}
+
+.score-value {
+  font-size: 1.8rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.score-label {
+  font-size: 0.7rem;
+  opacity: 0.9;
+}
+
+/* Interview Details */
+.interview-details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.detail-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.detail-icon {
+  font-size: 1.2rem;
+  color: #00ccff;
+}
+
+.detail-text {
+  color: #e5e7eb;
+  font-size: 0.95rem;
+}
+
+/* Interview Feedback */
+.interview-feedback {
+  background: rgba(0, 100, 200, 0.1);
+  border-left: 4px solid #00ccff;
+  padding: 1rem;
+  border-radius: 12px;
+  margin-bottom: 1.5rem;
+}
+
+.feedback-text {
+  color: #99aacc;
+  font-style: italic;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.feedback-text::before {
+  content: '"';
+  font-size: 1.5rem;
+  color: #00ccff;
+  opacity: 0.5;
+  margin-right: 0.3rem;
+}
+
+.feedback-text::after {
+  content: '"';
+  font-size: 1.5rem;
+  color: #00ccff;
+  opacity: 0.5;
+  margin-left: 0.3rem;
+}
+
+/* Strengths and Improvements */
+.interview-strengths,
+.interview-improvements {
+  margin-bottom: 1rem;
+}
+
+.interview-strengths h4,
+.interview-improvements h4 {
+  color: white;
+  font-size: 1rem;
+  margin-bottom: 0.8rem;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.tag {
+  padding: 0.4rem 1rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.strength-tag {
+  background: rgba(72, 187, 120, 0.2);
+  color: #48bb78;
+  border: 1px solid rgba(72, 187, 120, 0.3);
+}
+
+.improvement-tag {
+  background: rgba(246, 173, 85, 0.2);
+  color: #f6ad55;
+  border: 1px solid rgba(246, 173, 85, 0.3);
+}
+
+/* Interview Actions */
+.interview-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(0, 100, 200, 0.2);
+}
+
+.view-details-btn,
+.practice-again-btn {
+  padding: 0.6rem 1.2rem;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.view-details-btn {
+  background: transparent;
+  color: white;
+  border: 1px solid rgba(0, 200, 255, 0.3);
+}
+
+.view-details-btn:hover {
+  border-color: #00ccff;
+  transform: translateX(5px);
+}
+
+.practice-again-btn {
+  background: linear-gradient(135deg, #0066cc, #4f46e5);
+  color: white;
+  border: none;
+}
+
+.practice-again-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0, 100, 200, 0.4);
+}
+
+/* No Interviews */
+.no-interviews {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: rgba(10, 20, 30, 0.6);
+  border: 1px solid rgba(0, 100, 200, 0.2);
+  border-radius: 20px;
+}
+
+.no-data-icon {
+  font-size: 4rem;
+  display: block;
+  margin-bottom: 1rem;
+  opacity: 0.5;
+}
+
+.no-interviews h3 {
+  color: white;
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.no-interviews p {
+  color: #99aacc;
+  margin-bottom: 2rem;
+}
+
+.start-new-btn {
+  display: inline-block;
+  padding: 1rem 2rem;
+  background: linear-gradient(135deg, #0066cc, #4f46e5);
+  color: white;
+  text-decoration: none;
+  border-radius: 12px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.start-new-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px -5px rgba(0, 100, 200, 0.4);
+}
+
+/* Performance Summary */
+.performance-summary {
+  background: rgba(10, 20, 30, 0.6);
+  border: 1px solid rgba(0, 100, 200, 0.2);
+  border-radius: 20px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+}
+
+.performance-summary h2 {
+  color: white;
+  font-size: 1.3rem;
+  margin-bottom: 1.5rem;
+}
+
+.summary-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1.5rem;
+}
+
+.summary-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.summary-label {
+  color: #99aacc;
+  font-size: 0.9rem;
+}
+
+.summary-value {
+  color: white;
+  font-size: 1.3rem;
+  font-weight: 600;
+}
+
+/* Footer */
+.history-footer {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-top: 2rem;
+}
+
+.primary-btn, .secondary-btn {
+  padding: 1rem 2rem;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.3s ease;
+}
+
+.secondary-btn {
+  background: transparent;
+  color: white;
+  border: 2px solid rgba(0, 100, 200, 0.3);
+}
+
+.secondary-btn:hover {
+  border-color: #00ccff;
+  transform: translateY(-2px);
+  background: rgba(0, 100, 200, 0.1);
+}
+
+.primary-btn {
+  background: linear-gradient(135deg, #0066cc, #4f46e5);
+  color: white;
+}
+
+.primary-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px -5px rgba(0, 100, 200, 0.4);
+}
+
+/* Animations */
+@keyframes float1 {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(50px, 40px); }
+}
+
+@keyframes float2 {
+  0%, 100% { transform: translate(0, 0); }
+  50% { transform: translate(-40px, -30px); }
+}
+
+@keyframes float3 {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); }
+  50% { transform: translate(-50%, -50%) scale(1.1); }
+}
+
+@keyframes gridMove {
+  from { transform: translate(0, 0); }
+  to { transform: translate(40px, 40px); }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .history-page {
+    padding: 1rem;
+  }
+
+  .history-header {
+    flex-direction: column;
+    gap: 1rem;
+    text-align: center;
+  }
+
+  .filters-section {
+    flex-direction: column;
+  }
+
+  .interview-header {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+
+  .interview-score {
+    align-self: center;
+  }
+
+  .interview-actions {
+    flex-direction: column;
+  }
+
+  .view-details-btn,
+  .practice-again-btn {
+    width: 100%;
+    text-align: center;
+    justify-content: center;
+  }
+
+  .history-footer {
+    flex-direction: column;
+  }
+
+  .primary-btn, .secondary-btn {
+    width: 100%;
+    text-align: center;
+  }
+}
+
+@media (max-width: 576px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .interview-details {
+    grid-template-columns: 1fr;
+  }
+
+  .summary-stats {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #0a0c10;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #002b55;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #003d75;
+}
+
+/* Selection Color */
+::selection {
+  background: #0066cc;
+  color: white;
+}
