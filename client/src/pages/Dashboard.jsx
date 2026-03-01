@@ -2,6 +2,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import "./dashboard.css";
 
+
 export default function Dashboard() {
   const navigate = useNavigate();
   const [greeting, setGreeting] = useState("");
@@ -154,6 +155,15 @@ export default function Dashboard() {
             <span className="nav-icon">⚙️</span>
             <span>Settings</span>
           </Link>
+          <Link 
+            to="/Resume" 
+            className={`nav-item ${activeTab === 'Resume' ? 'active' : ''}`}
+            onClick={() => setActiveTab('Resume')}
+          >
+            <span className="nav-icon">📈</span>
+            <span>Resume</span>
+          </Link>
+      
         </div>
 
         <div className="nav-right">

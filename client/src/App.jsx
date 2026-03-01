@@ -1,3 +1,4 @@
+import React from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 
 import Landing from "./pages/Landing";
@@ -10,11 +11,12 @@ import Results from "./pages/Results";
 import History from "./pages/History";
 import Settings from "./pages/Settings";
 import Practice from "./pages/Practice";
-import Courses from "./pages/Courses";  // Add this import
+import Courses from "./pages/Courses";
+import Resume from "./pages/Resume";
 
 function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
@@ -26,8 +28,9 @@ function App() {
         <Route path="/history" element={<History />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/practice" element={<Practice />} />
-        <Route path="/courses" element={<Courses />} />  {/* Add this route */}
-      </Routes> 
+        <Route path="/courses" element={<Courses />} />
+        <Route path="/resume" element={<Resume />} />
+      </Routes>
     </BrowserRouter>
   );
 }

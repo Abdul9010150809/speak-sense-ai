@@ -51,3 +51,10 @@ docker-compose.override.yml
 # server-specific ignores
 server/node_modules/
 server/.env
+
+# .gitignore
+.env
+.env.local
+.env.production
+node_modules/
+uploads/
