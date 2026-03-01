@@ -79,12 +79,13 @@ const SignUp = () => {
       try {
         const response = await API.post('/auth/register', {
           name: formData.fullName,
-          email: formData.email,
+          email: formData.email.trim().toLowerCase(),
           password: formData.password
         });
 
         if (response.data) {
           localStorage.setItem('token', response.data.token);
+          if (response.data.user) localStorage.setItem('user', JSON.stringify(response.data.user));
           alert('Sign up successful! Please check your email to verify your account.');
           navigate('/dashboard');
         }
@@ -99,9 +100,25 @@ const SignUp = () => {
   };
 
   const handleSocialSignup = (provider) => {
-    console.log(`Sign up with ${provider}`);
-    // Implement social signup logic here
-    setApiError(`${provider} sign up coming soon!`);
+    const providerMap = {
+      Google: 'google',
+      GitHub: 'github',
+      LinkedIn: 'google'
+    };
+    const normalizedProvider = providerMap[provider] || 'google';
+
+    setIsLoading(true);
+    setApiError('');
+    API.post('/auth/social', { provider: normalizedProvider, mode: 'demo' })
+      .then((res) => {
+        if (res.data?.token) localStorage.setItem('token', res.data.token);
+        if (res.data?.user) localStorage.setItem('user', JSON.stringify(res.data.user));
+        navigate('/dashboard');
+      })
+      .catch((error) => {
+        setApiError(error.response?.data?.message || `${provider} sign up failed. Please try again.`);
+      })
+      .finally(() => setIsLoading(false));
   };
 
   return (

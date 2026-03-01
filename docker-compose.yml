@@ -12,6 +12,8 @@ services:
     build: ./ai-service
     ports:
       - "8000:8000"
+    env_file:
+      - ./ai-service/.env
 
   mongo:
     image: mongo

@@ -1,53 +1,90 @@
-# dependencies
+
+
+# ── Node / npm ──────────────────────────
 node_modules/
 client/node_modules/
-
-# yarn / pnp
-.pnp
-.pnp.js
-
-# production
-build/
-dist/
-
-# cache
-.cache/
-
-# environment variables
-.env
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-# logs
+server/node_modules/
+ai-service/node_modules/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+.pnp
+.pnp.js
 
-# OS files
+# ── Build outputs ────────────────────────
+build/
+dist/
+client/build/
+server/dist/
+.cache/
+
+# ── Environment / secrets ────────────────
+.env
+.env.*
+.env.local
+.env.development
+.env.development.local
+.env.test
+.env.test.local
+.env.production
+.env.production.local
+server/.env
+client/.env
+*.pem
+*.key
+*.secret
+
+# ── Coverage / testing ───────────────────
+coverage/
+.nyc_output/
+*.lcov
+jest-results.json
+
+# ── OS files ─────────────────────────────
 .DS_Store
+.DS_Store?
+._*
 Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
 
-# editor files
+# ── Editor / IDE ─────────────────────────
 .vscode/
 .idea/
+*.swp
+*.swo
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.vscode/settings.json
+.vscode/launch.json
 
-# coverage
-coverage/
-
-# python
+# ── Python (ai-service) ──────────────────
 __pycache__/
 *.py[cod]
 *.pyo
 *.pyd
+*.pyc
+.python-version
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
 venv/
 env/
+.venv/
+ai-service/venv/
 *.egg-info/
+dist/
+*.egg
+*.whl
+.Python
 
-# docker
-docker-compose.override.yml
-
+# ── Docker ───────────────────────────────
+docker-compose.override.y
 # server-specific ignores
 server/node_modules/
 server/.env
@@ -58,3 +95,27 @@ server/.env
 .env.production
 node_modules/
 uploads/
+=======
+# ── Logs ─────────────────────────────────
+logs/
+*.log
+*.pid
+*.seed
+*.pid.lock
+server/logs/
+
+# ── Runtime data ─────────────────────────
+tmp/
+temp/
+.history/
+
+# ── Misc ─────────────────────────────────
+*.tmp
+*.bak
+*.orig
+.parcel-cache/
+.eslintcache
+.stylelintcache
+.turbo/
+storybook-static/
+

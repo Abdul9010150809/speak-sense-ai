@@ -37,7 +37,7 @@ body {
   left: 0;
   right: 0;
   bottom: 0;
-  background-image: 
+  background-image:
     linear-gradient(rgba(0, 100, 200, 0.05) 1px, transparent 1px),
     linear-gradient(90deg, rgba(0, 100, 200, 0.05) 1px, transparent 1px);
   background-size: 40px 40px;
@@ -155,6 +155,39 @@ body {
 .avatar-selection p {
   color: #99aacc;
   margin-bottom: 2rem;
+}
+
+.interview-config-panel {
+  max-width: 980px;
+  margin: 0 auto 2rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1rem;
+}
+
+.config-item {
+  text-align: left;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 14px;
+  padding: 0.85rem;
+}
+
+.config-item label {
+  display: block;
+  color: #c6d8ef;
+  font-size: 0.82rem;
+  margin-bottom: 0.45rem;
+}
+
+.config-item select,
+.config-item input {
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(3, 6, 20, 0.7);
+  color: #fff;
+  border-radius: 10px;
+  padding: 0.55rem 0.65rem;
 }
 
 .avatars-grid {
@@ -510,7 +543,9 @@ video.video-off {
   gap: 1.5rem;
 }
 
-.current-question, .interview-info, .interview-tips {
+.current-question,
+.interview-info,
+.interview-tips {
   background: rgba(10, 20, 30, 0.6);
   backdrop-filter: blur(10px);
   border-radius: 20px;
@@ -518,7 +553,9 @@ video.video-off {
   border: 1px solid rgba(0, 100, 200, 0.2);
 }
 
-.current-question h3, .interview-info h3, .interview-tips h3 {
+.current-question h3,
+.interview-info h3,
+.interview-tips h3 {
   color: white;
   font-size: 1.1rem;
   margin-bottom: 1rem;
@@ -718,13 +755,27 @@ video.video-off {
 
 /* Animations */
 @keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-10px);
+  }
 }
 
 @keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
 }
 
 @keyframes slideIn {
@@ -732,6 +783,7 @@ video.video-off {
     opacity: 0;
     transform: translateY(20px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -743,6 +795,7 @@ video.video-off {
     opacity: 0;
     transform: scale(0.9);
   }
+
   to {
     opacity: 1;
     transform: scale(1);
@@ -750,23 +803,49 @@ video.video-off {
 }
 
 @keyframes bounce {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-20px); }
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-20px);
+  }
 }
 
 @keyframes float1 {
-  0%, 100% { transform: translate(0, 0); }
-  50% { transform: translate(50px, 40px); }
+
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+
+  50% {
+    transform: translate(50px, 40px);
+  }
 }
 
 @keyframes float2 {
-  0%, 100% { transform: translate(0, 0); }
-  50% { transform: translate(-40px, -30px); }
+
+  0%,
+  100% {
+    transform: translate(0, 0);
+  }
+
+  50% {
+    transform: translate(-40px, -30px);
+  }
 }
 
 @keyframes gridMove {
-  from { transform: translate(0, 0); }
-  to { transform: translate(40px, 40px); }
+  from {
+    transform: translate(0, 0);
+  }
+
+  to {
+    transform: translate(40px, 40px);
+  }
 }
 
 /* Responsive Design */
@@ -774,7 +853,7 @@ video.video-off {
   .interview-main {
     grid-template-columns: 1fr;
   }
-  
+
   .video-container {
     aspect-ratio: 16/9;
   }
@@ -784,17 +863,17 @@ video.video-off {
   .interview-page {
     padding: 1rem;
   }
-  
+
   .avatars-grid {
     grid-template-columns: repeat(2, 1fr);
   }
-  
+
   .interview-header {
     flex-direction: column;
     gap: 1rem;
     text-align: center;
   }
-  
+
   .results-stats {
     grid-template-columns: 1fr;
   }
@@ -804,13 +883,99 @@ video.video-off {
   .avatars-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .video-controls {
     flex-wrap: wrap;
     width: 90%;
   }
-  
+
   .control-btn.settings {
     width: 100%;
+  }
+}
+
+/* ===== SPLIT INTERVIEW AREA (AI panel + user video stacked) ===== */
+.interview-area {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* AI avatar panel dimensions */
+.ai-avatar-panel {
+  height: 380px;
+  flex-shrink: 0;
+}
+
+/* User video smaller box below AI panel */
+.video-container-user {
+  height: 200px;
+  position: relative;
+  background: #000;
+  border-radius: 16px;
+  overflow: hidden;
+  border: 1px solid rgba(0, 100, 200, 0.3);
+}
+
+/* Avatar selection card: taller for figure */
+.avatar-card {
+  min-height: 320px;
+}
+
+.avatar-preview {
+  height: 200px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  overflow: hidden;
+  margin-bottom: 0.75rem;
+}
+
+.avatar-icon-large {
+  display: none;
+}
+
+.avatar-card-hovered {
+  transform: translateY(-10px);
+  border-color: rgba(255, 255, 255, 0.35) !important;
+  box-shadow: 0 24px 50px -10px rgba(0, 0, 0, 0.6);
+}
+
+/* Typing indicator (three dots) */
+.typing-indicator {
+  display: flex;
+  gap: 5px;
+  padding: 0.6rem 0.3rem;
+  align-items: center;
+}
+
+.typing-indicator span {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #99aacc;
+  animation: typingDot 1.2s ease-in-out infinite;
+}
+
+.typing-indicator span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.typing-indicator span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes typingDot {
+
+  0%,
+  80%,
+  100% {
+    transform: scale(0.8);
+    opacity: 0.5;
+  }
+
+  40% {
+    transform: scale(1.2);
+    opacity: 1;
   }
 }

@@ -5,7 +5,12 @@
   "main": "server.js",
   "scripts": {
     "test": "jest",
-    "start": "node server.js"
+    "start": "node server.js",
+    "db:stats": "node scripts/dbOps.js stats",
+    "db:list-users": "node scripts/dbOps.js list-users",
+    "db:create-user": "node scripts/dbOps.js create-user",
+    "db:update-user": "node scripts/dbOps.js update-user",
+    "db:delete-user": "node scripts/dbOps.js delete-user"
   },
   "keywords": [],
   "author": "",

@@ -1,11 +1,26 @@
 from fastapi import FastAPI, WebSocket
 from pydantic import BaseModel
 import random
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = FastAPI()
 
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
+
 class AnalyzeRequest(BaseModel):
     transcript: str
+
+
+@app.get("/config-status")
+def config_status():
+    return {
+        "openaiConfigured": bool(OPENAI_API_KEY),
+        "geminiConfigured": bool(GEMINI_API_KEY)
+    }
 
 @app.post("/analyze")
 def analyze(data: AnalyzeRequest):

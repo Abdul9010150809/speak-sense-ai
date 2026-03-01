@@ -11,6 +11,15 @@ export default function Landing() {
   const canvasRef = useRef(null);
   const videoRef = useRef(null);
 
+  const getCompanyBadge = (company) => {
+    if (!company) return "•";
+    const words = company.trim().split(/\s+/).filter(Boolean);
+    if (words.length > 1) {
+      return (words[0][0] + words[1][0]).toUpperCase();
+    }
+    return company.slice(0, 2).toUpperCase();
+  };
+
   // AI Avatars data
   const aiAvatars = [
     {
@@ -224,6 +233,21 @@ export default function Landing() {
         width={window.innerWidth}
         height={window.innerHeight}
       />
+      <header className="landing-topbar">
+        <Link to="/" className="topbar-brand">
+          <span className="topbar-logo">🎙️</span>
+          <span>SpeakSense AI</span>
+        </Link>
+        <nav className="topbar-links">
+          <a href="#features">Features</a>
+          <a href="#testimonials">Stories</a>
+          <a href="#cta">Get Started</a>
+        </nav>
+        <div className="topbar-actions">
+          <Link to="/login" className="topbar-btn ghost">Sign In</Link>
+          <Link to="/signup" className="topbar-btn solid">Try Free</Link>
+        </div>
+      </header>
 
       {/* Hero Section */}
       <section className="hero-section">
@@ -355,7 +379,7 @@ export default function Landing() {
       </section>
 
       {/* Features Section with Interactive Cards */}
-      <section className="features-section">
+      <section className="features-section" id="features">
         <div className="section-header">
           <h2>Powerful <span className="gradient-text">Features</span></h2>
           <p>Everything you need to ace your interviews</p>
@@ -490,7 +514,7 @@ export default function Landing() {
       </section>
 
       {/* Testimonials Section with Carousel */}
-      <section className="testimonials-section">
+      <section className="testimonials-section" id="testimonials">
         <div className="section-header">
           <h2>Success <span className="gradient-text">Stories</span></h2>
           <p>Join thousands of professionals who landed their dream jobs</p>
@@ -545,7 +569,7 @@ export default function Landing() {
       </section>
 
       {/* CTA Section with Enhanced Design */}
-      <section className="cta-section">
+      <section className="cta-section" id="cta">
         <div className="cta-background">
           <div className="cta-particles"></div>
         </div>

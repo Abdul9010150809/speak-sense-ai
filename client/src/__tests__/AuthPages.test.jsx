@@ -5,14 +5,19 @@ import Login from "../pages/Login";
 import Register from "../pages/Register";
 import SignUp from "../pages/signup";
 
-const renderWithRouter = (ui) => render(<MemoryRouter>{ui}</MemoryRouter>);
+const renderWithRouter = (ui) =>
+  render(
+    <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      {ui}
+    </MemoryRouter>
+  );
 
 describe("Auth pages", () => {
   test("renders Login page", () => {
     renderWithRouter(<Login />);
     expect(screen.getByRole("heading", { name: /sign in/i })).toBeInTheDocument();
     expect(screen.getByLabelText(/email address/i)).toBeInTheDocument();
-    expect(screen.getByLabelText(/password/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/password/i, { selector: "input" })).toBeInTheDocument();
   });
 
   test("renders Register page", () => {

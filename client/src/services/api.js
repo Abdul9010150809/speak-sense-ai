@@ -1,9 +1,27 @@
 import axios from "axios";
 
+const normalizeApiBase = (rawBaseUrl) => {
+  if (!rawBaseUrl) return "/api";
+
+  const trimmed = rawBaseUrl.trim();
+  if (!trimmed) return "/api";
+
+  if (trimmed === "/api") return "/api";
+
+  const withoutTrailingSlash = trimmed.replace(/\/+$/, "");
+  if (withoutTrailingSlash.endsWith("/api")) {
+    return withoutTrailingSlash;
+  }
+
+  return `${withoutTrailingSlash}/api`;
+};
+
+const resolvedBaseUrl = normalizeApiBase(process.env.REACT_APP_API_URL);
+
 const API = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || "http://localhost:5000/api",
+  baseURL: resolvedBaseUrl,
   headers: {
-    "Content-Type": "application/json"
+    'Content-Type': 'application/json'
   }
 });
 

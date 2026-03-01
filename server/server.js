@@ -458,6 +458,31 @@ app.get("/api/interview/session/:sessionId", async (req, res) => {
     res.status(500).json({ success: false, error: "Internal server error" });
   }
 });
+const getDbStatus = () => {
+  const states = {
+    0: "disconnected",
+    1: "connected",
+    2: "connecting",
+    3: "disconnecting"
+  };
+  const readyState = mongoose.connection.readyState;
+  return states[readyState] || "unknown";
+};
+
+app.get(["/health", "/api/health"], (_req, res) => {
+  const database = getDbStatus();
+  const healthy = database === "connected" || process.env.NODE_ENV === "test";
+
+  return res.status(healthy ? 200 : 503).json({
+    status: healthy ? "ok" : "degraded",
+    service: "speak-sense-server",
+    database
+  });
+});
+
+app.use("/api/auth", authRoutes);
+app.use("/auth", authRoutes);
+app.use("/api/interview", interviewRoutes);
 
 // Get user's interview history
 app.get("/api/interview/history/:userId", async (req, res) => {

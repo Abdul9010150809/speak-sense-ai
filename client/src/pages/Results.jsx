@@ -182,6 +182,13 @@ export default function Results() {
   const total = pieData.reduce((sum, item) => sum + item.value, 0);
 
   useEffect(() => {
+    try {
+      const summary = JSON.parse(localStorage.getItem("latestInterviewSummary") || "null");
+      setLatestSummary(summary);
+    } catch {
+      setLatestSummary(null);
+    }
+
     const timer = setTimeout(() => {
       setAnimatedScores({
         overall: results.overall.score,
@@ -279,6 +286,21 @@ export default function Results() {
         <div className="results-content">
           {activeTab === 'overview' && (
             <div className="overview-tab">
+              {latestSummary && (
+                <div className="session-summary-card">
+                  <h3>Latest Session</h3>
+                  <p>
+                    Interviewer: <strong>{latestSummary.interviewer || 'AI Coach'}</strong> · 
+                    Mode: <strong>{latestSummary.mode}</strong> · 
+                    Difficulty: <strong>{latestSummary.config?.difficulty || 'intermediate'}</strong>
+                  </p>
+                  <p>
+                    Focus: <strong>{latestSummary.config?.mode || 'balanced'}</strong> · 
+                    Questions: <strong>{latestSummary.questionsAnswered || 0}</strong>
+                  </p>
+                </div>
+              )}
+
               {/* Score Cards */}
               <div className="score-cards">
                 <div className="score-card overall">

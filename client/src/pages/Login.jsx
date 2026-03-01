@@ -5,12 +5,7 @@ import API from '../services/api';
 
 const Login = () => {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    rememberMe: false
-  });
-
+  const [formData, setFormData] = useState({ email: '', password: '', rememberMe: false });
   const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -55,32 +50,17 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const newErrors = validateForm();
-    
-    if (Object.keys(newErrors).length === 0) {
-      setIsLoading(true);
-      try {
-        const response = await API.post('/auth/login', {
-          email: formData.email,
-          password: formData.password
-        });
-
-        // Store token and user data
-        if (response.data.token) {
-          localStorage.setItem('token', response.data.token);
-          if (formData.rememberMe) {
-            localStorage.setItem('rememberEmail', formData.email);
-          }
-          // Redirect to dashboard
-          navigate('/dashboard');
-        }
-      } catch (error) {
-        setApiError(error.response?.data?.message || 'Login failed. Please try again.');
-      } finally {
-        setIsLoading(false);
-      }
-    } else {
-      setErrors(newErrors);
+    if (!validate()) return;
+    setIsLoading(true);
+    try {
+      const res = await API.post('/auth/login', { email: formData.email, password: formData.password });
+      if (res.data.token) localStorage.setItem('token', res.data.token);
+      if (res.data.user) localStorage.setItem('user', JSON.stringify(res.data.user));
+      navigate('/dashboard');
+    } catch (err) {
+      setApiError(err.response?.data?.message || 'Invalid credentials. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -231,33 +211,13 @@ const Login = () => {
               <span>or sign in with</span>
             </div>
 
-            <div className="social-auth">
-              <button
-                type="button"
-                className="social-btn google"
-                onClick={() => handleSocialLogin('Google')}
-                disabled={isLoading}
-              >
-                <i className="fab fa-google"></i>
-                Google
+            {/* Social buttons */}
+            <div className="auth-social">
+              <button type="button" className="auth-social-btn" onClick={() => handleSocialSignIn('google')} disabled={isLoading}>
+                <span className="auth-social-icon">🔍</span> Google
               </button>
-              <button
-                type="button"
-                className="social-btn github"
-                onClick={() => handleSocialLogin('GitHub')}
-                disabled={isLoading}
-              >
-                <i className="fab fa-github"></i>
-                GitHub
-              </button>
-              <button
-                type="button"
-                className="social-btn linkedin"
-                onClick={() => handleSocialLogin('LinkedIn')}
-                disabled={isLoading}
-              >
-                <i className="fab fa-linkedin"></i>
-                LinkedIn
+              <button type="button" className="auth-social-btn" onClick={() => handleSocialSignIn('github')} disabled={isLoading}>
+                <span className="auth-social-icon">🐙</span> GitHub
               </button>
             </div>
 

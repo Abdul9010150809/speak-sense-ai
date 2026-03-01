@@ -1,25 +1,43 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
+import API from "../services/api";
 import "./dashboard.css";
 
 
 export default function Dashboard() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [greeting, setGreeting] = useState("");
-  const [activeTab, setActiveTab] = useState("dashboard");
+  const [activeTab, setActiveTab] = useState(location.pathname.toLowerCase());
   const [showNotifications, setShowNotifications] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
 
-  // Mock user data
-  const user = {
-    name: "Alex Johnson",
-    avatar: "👨‍💻",
-    level: "Advanced",
-    streak: 15,
-    interviewsCompleted: 24,
-    averageScore: 87,
-    notifications: 3
-  };
+  const [user, setUser] = useState(() => {
+    try {
+      const stored = JSON.parse(localStorage.getItem("user") || "null");
+      return {
+        name: stored?.name || "Alex Johnson",
+        avatar: "👨‍💻",
+        level: stored?.experience || "Intermediate",
+        streak: 15,
+        interviewsCompleted: 24,
+        averageScore: 87,
+        notifications: 2,
+        industry: stored?.industry || ""
+      };
+    } catch {
+      return {
+        name: "Alex Johnson",
+        avatar: "👨‍💻",
+        level: "Intermediate",
+        streak: 15,
+        interviewsCompleted: 24,
+        averageScore: 87,
+        notifications: 2,
+        industry: ""
+      };
+    }
+  });
 
   // Daily tasks
   const dailyTasks = [
@@ -66,6 +84,29 @@ export default function Dashboard() {
     else setGreeting("Good Evening");
   }, []);
 
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    API.get("/auth/me")
+      .then((res) => {
+        if (res.data?.user) {
+          localStorage.setItem("user", JSON.stringify(res.data.user));
+          setUser((prev) => ({
+            ...prev,
+            name: res.data.user.name || prev.name,
+            level: res.data.user.experience || prev.level,
+            industry: res.data.user.industry || ""
+          }));
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    setActiveTab(location.pathname.toLowerCase());
+  }, [location.pathname]);
+
   const handleLogout = () => {
     // Add logout logic here
     navigate("/login");
@@ -86,71 +127,56 @@ export default function Dashboard() {
         <div className="nav-brand">
           <Link to="/dashboard" className="brand-logo">
             <span className="logo-icon">🎯</span>
-            <span className="logo-text">InterviewAI</span>
+            <span className="logo-text">SpeakSense AI</span>
           </Link>
         </div>
 
         <div className="nav-menu">
           <Link 
             to="/dashboard" 
-            className={`nav-item ${activeTab === 'dashboard' ? 'active' : ''}`}
-            onClick={() => setActiveTab('dashboard')}
+            className={`nav-item ${activeTab === '/dashboard' ? 'active' : ''}`}
           >
             <span className="nav-icon">📊</span>
             <span>Overview</span>
           </Link>
           <Link 
-            to="/Planning" 
-            className={`nav-item ${activeTab === 'Planning' ? 'active' : ''}`}
-            onClick={() => setActiveTab('Planning')}
+            to="/planning" 
+            className={`nav-item ${activeTab === '/planning' ? 'active' : ''}`}
           >
             <span className="nav-icon">🎙️</span>
             <span>Interviews</span>
           </Link>
           <Link 
-            to="/Results" 
-            className={`nav-item ${activeTab === 'Results' ? 'active' : ''}`}
-            onClick={() => setActiveTab('Results')}
+            to="/results" 
+            className={`nav-item ${activeTab === '/results' ? 'active' : ''}`}
           >
             <span className="nav-icon">📝</span>
             <span>Feedback</span>
           </Link>
           <Link 
-            to="/History" 
-            className={`nav-item ${activeTab === 'History' ? 'active' : ''}`}
-            onClick={() => setActiveTab('History')}
+            to="/history" 
+            className={`nav-item ${activeTab === '/history' ? 'active' : ''}`}
           >
             <span className="nav-icon">📚</span>
             <span>History</span>
           </Link>
           <Link 
-            to="/Courses" 
-            className={`nav-item ${activeTab === 'Courses' ? 'active' : ''}`}
-            onClick={() => setActiveTab('Courses')}
+            to="/courses" 
+            className={`nav-item ${activeTab === '/courses' ? 'active' : ''}`}
           >
             <span className="nav-icon">🎓</span>
             <span>Courses</span>
           </Link>
           <Link 
-            to="/Practice" 
-            className={`nav-item ${activeTab === 'Practice' ? 'active' : ''}`}
-            onClick={() => setActiveTab('Practice')}
+            to="/practice" 
+            className={`nav-item ${activeTab === '/practice' ? 'active' : ''}`}
           >
             <span className="nav-icon">⚡</span>
             <span>Practice</span>
           </Link>
           <Link 
-            to="/Results" 
-            className={`nav-item ${activeTab === 'Results' ? 'active' : ''}`}
-            onClick={() => setActiveTab('Results')}
-          >
-            <span className="nav-icon">📈</span>
-            <span>Results</span>
-          </Link>
-          <Link 
-            to="/Settings" 
-            className={`nav-item ${activeTab === 'Settings' ? 'active' : ''}`}
-            onClick={() => setActiveTab('Settings')}
+            to="/settings" 
+            className={`nav-item ${activeTab === '/settings' ? 'active' : ''}`}
           >
             <span className="nav-icon">⚙️</span>
             <span>Settings</span>
@@ -224,7 +250,7 @@ export default function Dashboard() {
                   <span className="profile-avatar-large">{user.avatar}</span>
                   <div className="profile-info">
                     <h4>{user.name}</h4>
-                    <p>{user.level} Level</p>
+                    <p>{user.industry ? `${user.industry} • ` : ''}{user.level} Level</p>
                   </div>
                 </div>
                 <div className="profile-stats">

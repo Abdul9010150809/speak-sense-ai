@@ -139,7 +139,7 @@ const Register = () => {
       try {
         const response = await API.post('/auth/register', {
           name: formData.fullName,
-          email: formData.email,
+          email: formData.email.trim().toLowerCase(),
           phone: formData.phone,
           company: formData.company,
           jobTitle: formData.jobTitle,
@@ -151,7 +151,7 @@ const Register = () => {
 
         if (response.data) {
           localStorage.setItem('token', response.data.token);
-          alert('Registration successful! Please check your email to verify your account.');
+          if (response.data.user) localStorage.setItem('user', JSON.stringify(response.data.user));
           navigate('/dashboard');
         }
       } catch (error) {
@@ -166,9 +166,40 @@ const Register = () => {
   };
 
   const handleSocialRegister = (provider) => {
-    console.log(`Register with ${provider}`);
-    // Implement social registration logic here
-    setApiError(`${provider} registration coming soon!`);
+    const providerMap = {
+      Google: 'google',
+      GitHub: 'github',
+      LinkedIn: 'google'
+    };
+    const normalizedProvider = providerMap[provider] || 'google';
+
+    setIsLoading(true);
+    setApiError('');
+    API.post('/auth/social', { provider: normalizedProvider, mode: 'demo' })
+      .then((res) => {
+        if (res.data?.token) localStorage.setItem('token', res.data.token);
+        if (res.data?.user) localStorage.setItem('user', JSON.stringify(res.data.user));
+        navigate('/dashboard');
+      })
+      .catch((error) => {
+        setApiError(error.response?.data?.message || `${provider} registration failed. Please try again.`);
+      })
+      .finally(() => setIsLoading(false));
+  };
+
+  const handleDemoRegister = async () => {
+    setIsLoading(true);
+    setApiError('');
+    try {
+      const res = await API.post('/auth/demo');
+      if (res.data?.token) localStorage.setItem('token', res.data.token);
+      if (res.data?.user) localStorage.setItem('user', JSON.stringify(res.data.user));
+      navigate('/dashboard');
+    } catch (error) {
+      setApiError(error.response?.data?.message || 'Demo registration failed. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -471,6 +502,10 @@ const Register = () => {
                     LinkedIn
                   </button>
                 </div>
+
+                <button type="button" className="auth-submit-btn" onClick={handleDemoRegister} disabled={isLoading}>
+                  {isLoading ? 'Opening demo...' : 'Try Demo Registration'}
+                </button>
               </div>
             )}
 

@@ -1,0 +1,296 @@
+/* AvatarFigure.css - Animated Human Avatar Styles */
+
+/* ====== WRAPPER ====== */
+.avatar-figure-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.avatar-svg {
+  width: 100%;
+  max-width: 220px;
+  height: auto;
+  filter: drop-shadow(0 10px 30px rgba(0,0,0,0.5));
+  transform-origin: bottom center;
+}
+
+/* ====== POSTURE STATES ====== */
+
+/* Idle – gentle breathing sway */
+.avatar-idle .avatar-svg {
+  animation: avatarBreathe 4s ease-in-out infinite;
+}
+
+/* Speaking – torso bob + jaw suggests talking */
+.avatar-speaking .avatar-svg {
+  animation: avatarSpeak 0.55s ease-in-out infinite;
+}
+.avatar-speaking .avatar-mouth {
+  animation: mouthOpen 0.45s ease-in-out infinite;
+}
+
+/* Thinking – slight head tilt + hand to chin */
+.avatar-thinking .avatar-svg {
+  animation: avatarThink 3s ease-in-out infinite;
+}
+.avatar-thinking .avatar-right-arm {
+  animation: armRaise 3s ease-in-out infinite;
+}
+
+/* Nodding */
+.avatar-nodding .avatar-head {
+  animation: avatarNod 0.6s ease-in-out 3;
+}
+
+/* Listening - subtle attentive sway */
+.avatar-listening .avatar-svg,
+.avatar-listening .animal-avatar {
+  animation: avatarListen 2.2s ease-in-out infinite;
+}
+
+/* ====== KEYFRAMES ====== */
+
+/* Gentle breathing rise and fall */
+@keyframes avatarBreathe {
+  0%, 100% {
+    transform: translateY(0) scale(1);
+  }
+  40% {
+    transform: translateY(-4px) scale(1.005);
+  }
+  60% {
+    transform: translateY(-2px) scale(1.003);
+  }
+}
+
+/* Speaking bob – torso pulses */
+@keyframes avatarSpeak {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  25% {
+    transform: translateY(-2px) rotate(-0.4deg);
+  }
+  75% {
+    transform: translateY(1px) rotate(0.4deg);
+  }
+}
+
+@keyframes avatarListen {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-2px) rotate(0.8deg);
+  }
+}
+
+/* Mouth open on speaking */
+@keyframes mouthOpen {
+  0%, 100% {
+    transform: scaleY(1);
+  }
+  50% {
+    transform: scaleY(1.6) translateY(2px);
+  }
+}
+
+/* Thinking: slight forward lean + head tilt */
+@keyframes avatarThink {
+  0%, 100% {
+    transform: rotate(0deg) translateY(0);
+  }
+  30% {
+    transform: rotate(-1.2deg) translateY(-3px);
+  }
+  65% {
+    transform: rotate(0.5deg) translateY(-1px);
+  }
+}
+
+/* Arm raise for thinking posture */
+@keyframes armRaise {
+  0%, 100% {
+    transform: rotate(0deg);
+  }
+  40% {
+    transform: rotate(-15deg) translateX(-5px) translateY(-8px);
+  }
+}
+
+/* Nod - head tips forward-back */
+@keyframes avatarNod {
+  0%, 100% {
+    transform: rotate(0deg) translateY(0);
+  }
+  30% {
+    transform: rotate(10deg) translateY(5px);
+  }
+  60% {
+    transform: rotate(-2deg) translateY(-2px);
+  }
+}
+
+/* Speaking glow ring */
+.avatar-speak-ring {
+  position: absolute;
+  bottom: -8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  border: 3px solid;
+  opacity: 0;
+  animation: speakRingPulse 0.55s ease-in-out infinite;
+}
+
+@keyframes speakRingPulse {
+  0% {
+    transform: translateX(-50%) scale(0.8);
+    opacity: 0.6;
+  }
+  100% {
+    transform: translateX(-50%) scale(1.4);
+    opacity: 0;
+  }
+}
+
+/* ====== AVATAR SELECTION CARD PREVIEW (large card) ====== */
+.avatar-preview {
+  width: 100%;
+  height: 200px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  margin-bottom: 1rem;
+  overflow: hidden;
+  position: relative;
+}
+
+.animal-avatar {
+  width: 140px;
+  height: 160px;
+  border-radius: 24px;
+  background: linear-gradient(160deg, rgba(255, 255, 255, 0.16), rgba(255, 255, 255, 0.06));
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(4px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+}
+
+.animal-emoji {
+  font-size: 3.2rem;
+  filter: drop-shadow(0 8px 12px rgba(0, 0, 0, 0.35));
+}
+
+.animal-nameplate {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #dbeafe;
+  letter-spacing: 0.02em;
+}
+
+/* ====== LIVE INTERVIEW PANEL ====== */
+.ai-avatar-panel {
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(160deg, #09132b 0%, #01060f 100%);
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  padding-bottom: 20px;
+  position: relative;
+  overflow: hidden;
+}
+
+.ai-avatar-panel::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 260px;
+  height: 260px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(79,158,255,0.15) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.ai-avatar-panel .avatar-figure-wrapper {
+  height: 300px;
+  width: 200px;
+}
+
+.ai-panel-name {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: white;
+  margin-top: 1rem;
+  text-shadow: 0 0 10px rgba(0,150,255,0.5);
+}
+
+.ai-panel-role {
+  font-size: 0.8rem;
+  color: #99aacc;
+  margin-top: 0.25rem;
+}
+
+.ai-panel-status {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  padding: 0.3rem 0.9rem;
+  background: rgba(0,100,200,0.2);
+  border-radius: 20px;
+  border: 1px solid rgba(0,200,255,0.2);
+}
+
+.ai-panel-status .status-dot {
+  width: 8px;
+  height: 8px;
+  background: #10b981;
+  border-radius: 50%;
+  animation: pulse 1.5s infinite;
+}
+
+.ai-panel-status span:last-child {
+  font-size: 0.8rem;
+  color: #99aacc;
+}
+
+/* ====== BACKGROUND SCENE for avatar panel ====== */
+.panel-desk {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background: linear-gradient(180deg, #1a2540 0%, #0d1626 100%);
+  border-top: 2px solid rgba(0,100,200,0.3);
+}
+
+.panel-bg-lines {
+  position: absolute;
+  top: 0; left: 0; right: 0; bottom: 60px;
+  background-image:
+    linear-gradient(rgba(0,100,200,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,100,200,0.04) 1px, transparent 1px);
+  background-size: 30px 30px;
+  pointer-events: none;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(16,185,129,0.4); }
+  50% { opacity: 0.6; box-shadow: 0 0 0 4px rgba(16,185,129,0); }
+}

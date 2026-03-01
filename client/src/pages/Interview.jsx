@@ -64,6 +64,92 @@ const Avatar = ({
     return avatarMap[avatar?.name] || avatarMap.Alex;
   };
 
+  const [selectedAvatar, setSelectedAvatar] = useState(null);
+  const [showAvatarSelect, setShowAvatarSelect] = useState(true);
+  const [useChat, setUseChat] = useState(false);
+  const [messages, setMessages] = useState([]);
+  const [inputMessage, setInputMessage] = useState("");
+  const [currentQuestion, setCurrentQuestion] = useState(0);
+  const [interviewActive, setInterviewActive] = useState(false);
+  const [timeElapsed, setTimeElapsed] = useState(0);
+  const [showResults, setShowResults] = useState(false);
+  const [isMuted, setIsMuted] = useState(false);
+  const [isVideoOff, setIsVideoOff] = useState(false);
+
+  // Avatar posture state
+  const [avatarPosture, setAvatarPosture] = useState("idle");
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [isAiTyping, setIsAiTyping] = useState(false);
+  // Hover preview posture
+  const [hoveredAvatarId, setHoveredAvatarId] = useState(null);
+  // Feedback sidebar
+  const [feedbackOpen, setFeedbackOpen] = useState(true);
+  const [lastUserMessage, setLastUserMessage] = useState('');
+  const [userProfile, setUserProfile] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("user") || "null");
+    } catch {
+      return null;
+    }
+  });
+  const [interviewConfig, setInterviewConfig] = useState({
+    mode: "balanced",
+    difficulty: "intermediate",
+    questionCount: 5
+  });
+
+  const videoRef = useRef(null);
+  const chatContainerRef = useRef(null);
+  const timerRef = useRef(null);
+  const speakTimerRef = useRef(null);
+
+  const avatarCatalog = {
+    default: [
+      { id: 1, name: "Alex", gender: "male", role: "Technical Interviewer", avatar: "👨‍💼", color: "#4f9eff", bgColor: "linear-gradient(135deg, #0066cc, #004080)" },
+      { id: 2, name: "Sarah", gender: "female", role: "HR Specialist", avatar: "👩‍💼", color: "#f687b3", bgColor: "linear-gradient(135deg, #d53f8c, #97266d)" },
+      { id: 3, name: "Michael", gender: "male", role: "Senior Developer", avatar: "👨‍💻", color: "#48bb78", bgColor: "linear-gradient(135deg, #2f855a, #1e4b3c)" },
+      { id: 4, name: "Luna", species: "animal", role: "Confidence Coach (Owl)", avatar: "🦉", color: "#9f7aea", bgColor: "linear-gradient(135deg, #5b21b6, #312e81)" },
+      { id: 5, name: "Rex", species: "animal", role: "Behavior Mentor (Fox)", avatar: "🦊", color: "#ed8936", bgColor: "linear-gradient(135deg, #dd6b20, #9c4221)" },
+      { id: 6, name: "Coco", species: "animal", role: "Communication Coach (Panda)", avatar: "🐼", color: "#38b2ac", bgColor: "linear-gradient(135deg, #0f766e, #234e52)" }
+    ],
+    software: [
+      { id: 11, name: "Nova", gender: "female", role: "Frontend Architect", avatar: "👩‍💻", color: "#60a5fa", bgColor: "linear-gradient(135deg, #2563eb, #0f172a)" },
+      { id: 12, name: "Kai", gender: "male", role: "System Design Lead", avatar: "👨‍💻", color: "#22d3ee", bgColor: "linear-gradient(135deg, #0e7490, #0f172a)" },
+      { id: 13, name: "Byte", species: "animal", role: "Coding Pace Coach (Otter)", avatar: "🦦", color: "#34d399", bgColor: "linear-gradient(135deg, #047857, #052e16)" }
+    ],
+    data: [
+      { id: 21, name: "Iris", gender: "female", role: "ML Interviewer", avatar: "👩‍🔬", color: "#818cf8", bgColor: "linear-gradient(135deg, #4338ca, #1f2937)" },
+      { id: 22, name: "Atlas", gender: "male", role: "Analytics Lead", avatar: "👨‍🔬", color: "#2dd4bf", bgColor: "linear-gradient(135deg, #0f766e, #1f2937)" },
+      { id: 23, name: "Pixel", species: "animal", role: "Insight Coach (Koala)", avatar: "🐨", color: "#f472b6", bgColor: "linear-gradient(135deg, #9d174d, #3f3f46)" }
+    ]
+  };
+
+  const avatars = useMemo(() => {
+    const industry = (userProfile?.industry || "").toLowerCase();
+    if (industry.includes("software") || industry.includes("technology") || industry.includes("it")) {
+      return [...avatarCatalog.software, ...avatarCatalog.default.slice(3)];
+    }
+    if (industry.includes("data") || industry.includes("ml") || industry.includes("machine")) {
+      return [...avatarCatalog.data, ...avatarCatalog.default.slice(0, 3)];
+    }
+    return avatarCatalog.default;
+  }, [userProfile]);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (!token) return;
+
+    API.get("/auth/me")
+      .then((res) => {
+        if (res.data?.user) {
+          localStorage.setItem("user", JSON.stringify(res.data.user));
+          setUserProfile(res.data.user);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  // Auto-scroll chat
   useEffect(() => {
     setAvatarImageUrl(getAvatarImageUrl(avatar?.name));
   }, [avatar]);
@@ -865,78 +951,11 @@ const Avatar = ({
     });
   };
 
-  // Generate feedback based on answers
-  const generateFeedback = async () => {
-    setIsLoading(true);
-    
-    try {
-      // Calculate scores based on answer quality
-      const avgAnswerLength = answers.reduce((sum, a) => sum + (a.answer?.split(' ').length || 0), 0) / answers.length;
-      const baseScore = Math.min(95, Math.max(65, Math.floor(avgAnswerLength * 0.5) + 70));
-      
-      // Adjust score based on difficulty
-      const difficultyMultiplier = {
-        "Beginner": 0.9,
-        "Intermediate": 1.0,
-        "Advanced": 1.1,
-        "Expert": 1.2
-      };
-      
-      const adjustedScore = Math.min(100, Math.round(baseScore * (difficultyMultiplier[selectedDifficulty?.name] || 1.0)));
-      
-      // Calculate per-question scores
-      const questionFeedback = answers.map((answer, index) => {
-        const answerLength = answer.answer?.split(' ').length || 0;
-        const score = Math.min(95, Math.max(60, Math.floor(answerLength * 0.5) + 65));
-        return {
-          question: answer.question,
-          score: score,
-          feedback: score > 80 ? "Strong response with good detail" : "Good response, could include more specific examples"
-        };
-      });
-      
-      const feedbackData = {
-        overallScore: adjustedScore,
-        strengths: [
-          "Good communication skills demonstrated",
-          "Provided clear and structured responses",
-          "Showed relevant experience for the role",
-          `Answered questions appropriate for ${selectedDifficulty?.name} level`,
-          ...(answers.length > 5 ? ["Completed all questions thoroughly"] : [])
-        ],
-        improvements: [
-          "Consider providing more specific examples from your experience",
-          "Quantify achievements with metrics where possible",
-          `For ${selectedDifficulty?.name} level, expect more technical depth in answers`,
-          "Practice more concise responses while maintaining detail",
-          "Review industry best practices for your role"
-        ],
-        summary: `You've completed the ${selectedDifficulty?.name} level ${selectedType?.name} interview for the ${jobRole} position. You demonstrated good communication skills and provided relevant information. Your responses were appropriate for this level. To improve, focus on including more specific examples and quantifiable achievements.`,
-        role: jobRole,
-        difficulty: selectedDifficulty?.name,
-        type: selectedType?.name,
-        questionCount: answers.length,
-        questionFeedback: questionFeedback,
-        answers: answers
-      };
-      
-      setFeedback(feedbackData);
-      
-      // Speak the summary
-      speak(feedbackData.summary);
-      
-      if (onComplete) {
-        onComplete({
-          answers,
-          feedback: feedbackData,
-          sessionId: propSessionId,
-          selections: planningSelections
-        });
-      }
-    } catch (error) {
-      console.error("Error generating feedback:", error);
-    } finally {
-      setIsLoading(false);
+  const toggleVideo = () => {
+    if (videoRef.current?.srcObject) {
+      const tracks = videoRef.current.srcObject.getVideoTracks();
+      tracks.forEach(t => (t.enabled = isVideoOff));
+      setIsVideoOff(!isVideoOff);
     }
   };
 
@@ -946,26 +965,12 @@ const Avatar = ({
     : 0;
 
   return (
-    <div className="avatar-container">
-      {/* Header with selections from planning */}
-      <div className="interview-header">
-        <div className="header-left">
-          <h1 className="interview-title">AI Interview Session</h1>
-          <div className="interview-badges">
-            <span className="role-badge">{jobRole}</span>
-            <span className="difficulty-badge" style={{
-              background: selectedDifficulty?.id === 1 ? '#48bb78' :
-                         selectedDifficulty?.id === 2 ? '#ecc94b' :
-                         selectedDifficulty?.id === 3 ? '#f56565' : '#9f7aea'
-            }}>
-              {selectedDifficulty?.icon || '📊'} {selectedDifficulty?.name || 'Intermediate'}
-            </span>
-            <span className="type-badge">
-              {selectedType?.icon || '🎙️'} {selectedType?.name || 'Mixed'}
-            </span>
-          </div>
-        </div>
-        <p className="domain-indicator">{selectedDomain?.icon} {selectedDomain?.name || 'General'}</p>
+    <div className="interview-page">
+      {/* Background */}
+      <div className="interview-bg">
+        <div className="bg-grid"></div>
+        <div className="bg-glow glow-1"></div>
+        <div className="bg-glow glow-2"></div>
       </div>
 
       {/* Main Content */}
@@ -1002,92 +1007,303 @@ const Avatar = ({
           </div>
         </div>
 
-        {/* Progress Bar */}
-        {questions.length > 0 && !feedback && (
-          <div className="progress-container">
-            <div className="progress-bar">
-              <div 
-                className="progress-fill"
-                style={{ width: `${progressPercentage}%` }}
-              />
-            </div>
-            <span className="progress-text">
-              Question {currentQuestionIndex + 1} of {questions.length}
-            </span>
-          </div>
-        )}
+        {showAvatarSelect ? (
+          /* ===== AVATAR SELECTION ===== */
+          <div className="avatar-selection">
+            <h2>Choose Your Interviewer</h2>
+            <p>
+              {userProfile?.industry
+                ? `Personalized for ${userProfile.industry}.`
+                : "Select an AI interviewer and start your 1:1 mock interview"}
+            </p>
 
-        {/* Current Question Display */}
-        {showQuestion && questions[currentQuestionIndex] && !feedback && (
-          <div className="question-card">
-            <div className="ai-thinking">
-              <span className="ai-label">AI Interviewer asks ({selectedDifficulty?.name} level):</span>
-            </div>
-            <div className="question-bubble">
-              <p className="question-text">"{questions[currentQuestionIndex]}"</p>
-            </div>
-          </div>
-        )}
+            <div className="interview-config-panel">
+              <div className="config-item">
+                <label htmlFor="configMode">Interview Focus</label>
+                <select
+                  id="configMode"
+                  value={interviewConfig.mode}
+                  onChange={(e) => setInterviewConfig((prev) => ({ ...prev, mode: e.target.value }))}
+                >
+                  <option value="balanced">Balanced</option>
+                  <option value="technical">Technical</option>
+                  <option value="behavioral">Behavioral</option>
+                  <option value="communication">Communication</option>
+                </select>
+              </div>
 
-        {/* Listening Indicator */}
-        {isListening && (
-          <div className="listening-indicator">
-            <div className="mic-icon">🎤</div>
-            <div className="listening-text">
-              <p className="listening-title">Listening to your answer...</p>
-              <p className="listening-subtitle">Speak clearly - I'm recording your response</p>
+              <div className="config-item">
+                <label htmlFor="configDifficulty">Difficulty</label>
+                <select
+                  id="configDifficulty"
+                  value={interviewConfig.difficulty}
+                  onChange={(e) => setInterviewConfig((prev) => ({ ...prev, difficulty: e.target.value }))}
+                >
+                  <option value="beginner">Beginner</option>
+                  <option value="intermediate">Intermediate</option>
+                  <option value="advanced">Advanced</option>
+                </select>
+              </div>
+
+              <div className="config-item">
+                <label htmlFor="configCount">Question Count</label>
+                <input
+                  id="configCount"
+                  type="number"
+                  min="3"
+                  max="10"
+                  value={interviewConfig.questionCount}
+                  onChange={(e) => setInterviewConfig((prev) => ({ ...prev, questionCount: Number(e.target.value) || 5 }))}
+                />
+              </div>
             </div>
-            <div className="sound-waves">
-              {[0, 1, 2, 3, 4].map((i) => (
-                <div key={i} className="wave-bar" style={{ animationDelay: `${i * 0.15}s` }} />
+
+            <div className="avatars-grid">
+              {avatars.map(avatar => (
+                <div
+                  key={avatar.id}
+                  className={`avatar-card ${hoveredAvatarId === avatar.id ? "avatar-card-hovered" : ""}`}
+                  onClick={() => startInterview(avatar)}
+                  onMouseEnter={() => setHoveredAvatarId(avatar.id)}
+                  onMouseLeave={() => setHoveredAvatarId(null)}
+                  style={{ background: avatar.bgColor }}
+                >
+                  {/* Animated SVG avatar preview */}
+                  <div className="avatar-preview">
+                    <AvatarFigure
+                      avatar={avatar}
+                      isSpeaking={hoveredAvatarId === avatar.id}
+                      posture={hoveredAvatarId === avatar.id ? "speaking" : "idle"}
+                    />
+                  </div>
+
+                  <h3>{avatar.name}</h3>
+                  <p className="avatar-role">{avatar.role}</p>
+                  <button className="select-avatar-btn">
+                    Start Interview →
+                  </button>
+                </div>
               ))}
             </div>
           </div>
-        )}
 
-        {/* Transcript Display */}
-        {transcript && !isListening && !feedback && (
-          <div className="transcript-card">
-            <p className="transcript-label">✓ Your Response Recorded</p>
-            <p className="transcript-text">"{transcript}"</p>
+        ) : showResults ? (
+          /* ===== RESULTS ===== */
+          <div className="results-screen">
+            <div className="results-card">
+              <div className="results-icon">🏆</div>
+              <h2>Interview Completed!</h2>
+              <p>Great job! Your interview has been analyzed.</p>
+
+              <div className="results-stats">
+                <div className="result-stat">
+                  <span className="stat-label">Duration</span>
+                  <span className="stat-value">{formatTime(timeElapsed)}</span>
+                </div>
+                <div className="result-stat">
+                  <span className="stat-label">Questions</span>
+                  <span className="stat-value">{currentQuestion}</span>
+                </div>
+                <div className="result-stat">
+                  <span className="stat-label">Mode</span>
+                  <span className="stat-value">{useChat ? "Chat" : "Video"}</span>
+                </div>
+              </div>
+
+              <div className="results-actions">
+                <Link to="/results" className="view-results-btn">View Detailed Results →</Link>
+                <button
+                  className="new-interview-btn"
+                  onClick={() => {
+                    setShowAvatarSelect(true);
+                    setSelectedAvatar(null);
+                    setMessages([]);
+                    setCurrentQuestion(0);
+                    setTimeElapsed(0);
+                    setAvatarPosture("idle");
+                  }}
+                >
+                  New Interview
+                </button>
+              </div>
+            </div>
           </div>
-        )}
 
-        {/* Feedback Display */}
-        {feedback && (
-          <div className="feedback-container">
-            <h3 className="feedback-title">Interview Complete - Your Feedback</h3>
-            
-            <div className="score-card">
-              <div className="overall-score">
-                <span className="score-value">{feedback.overallScore}%</span>
-                <span className="score-label">Overall Score</span>
+        ) : (
+          /* ===== ACTIVE INTERVIEW SESSION ===== */
+          <div className="interview-session">
+            <div className="interview-main">
+              {/* Left: AI avatar panel + user video */}
+              <div className="interview-area">
+                {/* AI Avatar Panel (always visible) */}
+                <div className="ai-avatar-panel">
+                  <div className="panel-bg-lines"></div>
+
+                  {/* Animated human avatar */}
+                  <AvatarFigure
+                    avatar={selectedAvatar}
+                    isSpeaking={isSpeaking}
+                    posture={avatarPosture}
+                  />
+
+                  <div className="ai-panel-name">{selectedAvatar?.name}</div>
+                  <div className="ai-panel-role">{selectedAvatar?.role}</div>
+                  <div className="ai-panel-status">
+                    <span className="status-dot"></span>
+                    <span>{isAiTyping ? "Thinking…" : isSpeaking ? "Speaking…" : "Listening"}</span>
+                  </div>
+
+                  <div className="panel-desk"></div>
+                </div>
+
+                {/* User video / chat toggle */}
+                {!useChat ? (
+                  <div className="video-container video-container-user">
+                    <video ref={videoRef} autoPlay playsInline muted={isMuted} className={isVideoOff ? "video-off" : ""} />
+                    {isVideoOff && (
+                      <div className="video-off-placeholder">
+                        <span className="video-off-icon">📹</span>
+                        <p>Camera is off</p>
+                      </div>
+                    )}
+                    <div className="video-controls">
+                      <button className={`control-btn ${isMuted ? "active" : ""}`} onClick={toggleMute}>
+                        {isMuted ? "🔇" : "🎤"}
+                      </button>
+                      <button className={`control-btn ${isVideoOff ? "active" : ""}`} onClick={toggleVideo}>
+                        {isVideoOff ? "📷" : "🎥"}
+                      </button>
+                      <button className="control-btn settings" onClick={() => setUseChat(true)}>
+                        💬 Chat Mode
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  /* Chat mode */
+                  <div className="chat-container">
+                    <div className="chat-header">
+                      <div className="chat-avatar">
+                        <span className="chat-avatar-icon">{selectedAvatar?.avatar}</span>
+                        <div>
+                          <h3>{selectedAvatar?.name}</h3>
+                          <p>{selectedAvatar?.role}</p>
+                        </div>
+                      </div>
+                      <button className="switch-video-btn" onClick={() => setUseChat(false)}>
+                        📹 Video Mode
+                      </button>
+                    </div>
+
+                    <div className="chat-messages" ref={chatContainerRef}>
+                      {messages.map(msg => (
+                        <div key={msg.id} className={`message ${msg.sender === "user" ? "user-message" : "ai-message"}`}>
+                          <div className="message-avatar">
+                            {msg.sender === "user" ? "👤" : selectedAvatar?.avatar}
+                          </div>
+                          <div className="message-content">
+                            <div className="message-header">
+                              <span className="message-sender">
+                                {msg.sender === "user" ? "You" : selectedAvatar?.name}
+                              </span>
+                              <span className="message-time">{msg.timestamp}</span>
+                            </div>
+                            <p className="message-text">{msg.message}</p>
+                          </div>
+                        </div>
+                      ))}
+                      {isAiTyping && (
+                        <div className="message ai-message">
+                          <div className="message-avatar">{selectedAvatar?.avatar}</div>
+                          <div className="message-content">
+                            <div className="typing-indicator">
+                              <span></span><span></span><span></span>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    <form onSubmit={sendMessage} className="chat-input-form">
+                      <input
+                        type="text"
+                        value={inputMessage}
+                        onChange={e => setInputMessage(e.target.value)}
+                        placeholder="Type your response…"
+                        className="chat-input"
+                        disabled={isAiTyping}
+                      />
+                      <button type="submit" className="send-btn" disabled={isAiTyping || !inputMessage.trim()}>
+                        Send →
+                      </button>
+                    </form>
+                  </div>
+                )}
               </div>
-            </div>
 
-            <div className="interview-summary-badges">
-              <span className="summary-role">{feedback.role}</span>
-              <span className="summary-difficulty">{feedback.difficulty} Level</span>
-              <span className="summary-type">{feedback.type}</span>
-            </div>
+              {/* Feedback Sidebar (grammar, improvements, topics) */}
+              <FeedbackSidebar
+                lastUserMessage={lastUserMessage}
+                isOpen={feedbackOpen}
+                onToggle={() => setFeedbackOpen(o => !o)}
+              />
 
-            <div className="feedback-sections">
-              <div className="strengths-section">
-                <h4>💪 Key Strengths</h4>
-                <ul>
-                  {feedback.strengths.map((strength, i) => (
-                    <li key={i}>{strength}</li>
-                  ))}
-                </ul>
-              </div>
+              {/* Right Interview Detail Sidebar */}
+              <div className="interview-sidebar">
+                <div className="current-question">
+                  <h3>Interview Progress</h3>
+                  <div className="question-box">
+                    <p>{messages.filter(m => m.sender === "ai").slice(-1)[0]?.message || "Waiting for interview to start…"}</p>
+                  </div>
+                  <div className="question-progress">
+                    <span>Question {currentQuestion} / 5</span>
+                    <div className="progress-bar">
+                      <div
+                        className="progress-fill"
+                        style={{ width: `${Math.min((currentQuestion / 5) * 100, 100)}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                </div>
 
-              <div className="improvements-section">
-                <h4>📈 Areas for Growth</h4>
-                <ul>
-                  {feedback.improvements.map((improvement, i) => (
-                    <li key={i}>{improvement}</li>
-                  ))}
-                </ul>
+                <div className="interview-info">
+                  <h3>Interview Details</h3>
+                  <div className="info-item">
+                    <span className="info-label">Interviewer:</span>
+                    <span className="info-value">{selectedAvatar?.name}</span>
+                  </div>
+                  <div className="info-item">
+                    <span className="info-label">Role:</span>
+                    <span className="info-value">{selectedAvatar?.role}</span>
+                  </div>
+                  <div className="info-item">
+                    <span className="info-label">Mode:</span>
+                    <span className="info-value">{useChat ? "Chat" : "Video"}</span>
+                  </div>
+                  <div className="info-item">
+                    <span className="info-label">Duration:</span>
+                    <span className="info-value">{formatTime(timeElapsed)}</span>
+                  </div>
+                  <div className="info-item">
+                    <span className="info-label">Status:</span>
+                    <span className="info-value" style={{ color: isSpeaking ? "#10b981" : isAiTyping ? "#f59e0b" : "#99aacc" }}>
+                      {isAiTyping ? "🤔 Thinking" : isSpeaking ? "🗣️ Speaking" : "👂 Listening"}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="interview-tips">
+                  <h3>Quick Tips</h3>
+                  <ul>
+                    <li>✓ Speak clearly and confidently</li>
+                    <li>✓ Use the STAR method for answers</li>
+                    <li>✓ Take your time before answering</li>
+                    <li>✓ Maintain eye contact</li>
+                  </ul>
+                </div>
+
+                <button className="end-interview-btn" onClick={endInterview}>
+                  End Interview
+                </button>
               </div>
             </div>
 
