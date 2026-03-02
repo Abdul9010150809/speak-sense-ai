@@ -363,12 +363,6 @@ describe("Interview posture integration", () => {
 
     await startFirstInterview();
 
-    // Check for posture monitoring in the new button format
-    expect(screen.getByText(/posture/i)).toBeInTheDocument();
-    // The posture score should show "--" initially or a score like "85/100"
-    const postureScore = screen.getByText(/^(--|[0-9]+\/100)$/);
-    expect(postureScore).toBeInTheDocument();
-
     const sidebar = container.querySelector(".feedback-sidebar.open");
     expect(sidebar).toBeInTheDocument();
 

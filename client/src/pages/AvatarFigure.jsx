@@ -249,7 +249,7 @@ const AvatarDefs = memo(({ primaryColor, hasGlow = false }) => (
 
 AvatarDefs.displayName = 'AvatarDefs';
 
-const Head = memo(({ skinColor, expression, isBlinking, isActive }) => {
+const Head = memo(({ skinColor, eyeColor, expression, isBlinking, isActive }) => {
   const eyeWidth = isBlinking ? 12 : 14;
   const eyeHeight = isBlinking ? 2 : 10;
   
@@ -288,7 +288,7 @@ const Head = memo(({ skinColor, expression, isBlinking, isActive }) => {
         <ellipse cx="80" cy="110" rx={eyeWidth} ry={eyeHeight} fill="white" />
         {!isBlinking && (
           <>
-            <circle cx="80" cy="110" r="4" fill={getEyeColor('brown')} />
+            <circle cx="80" cy="110" r="4" fill={eyeColor} />
             <circle cx="82" cy="108" r="1.5" fill="white" />
           </>
         )}
@@ -297,7 +297,7 @@ const Head = memo(({ skinColor, expression, isBlinking, isActive }) => {
         <ellipse cx="120" cy="110" rx={eyeWidth} ry={eyeHeight} fill="white" />
         {!isBlinking && (
           <>
-            <circle cx="120" cy="110" r="4" fill={getEyeColor('brown')} />
+            <circle cx="120" cy="110" r="4" fill={eyeColor} />
             <circle cx="122" cy="108" r="1.5" fill="white" />
           </>
         )}
@@ -513,6 +513,7 @@ const GameAvatar = memo(({
           
           <Head 
             skinColor={skinColor}
+            eyeColor={eyeColor}
             expression={expression}
             isBlinking={isBlinking}
             isActive={isActive}
