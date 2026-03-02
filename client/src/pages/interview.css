@@ -802,8 +802,8 @@ body {
   position: absolute;
   right: var(--spacing-md);
   bottom: var(--spacing-md);
-  width: 280px;
-  height: 175px;
+  width: 260px;
+  height: 160px;
   border-radius: var(--radius-md);
   border: 3px solid rgba(125, 211, 252, 0.6);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8);
@@ -812,14 +812,24 @@ body {
   -webkit-backdrop-filter: blur(6px);
   background: rgba(0, 0, 0, 0.8);
   transition: all var(--transition-base);
+  pointer-events: auto;
+}
+
+@media (max-width: 968px) {
+  .video-container-user.pip-camera {
+    width: 200px;
+    height: 125px;
+    right: 0.8rem;
+    bottom: 0.8rem;
+  }
 }
 
 @media (max-width: 576px) {
   .video-container-user.pip-camera {
-    width: 165px;
-    height: 108px;
-    right: 0.65rem;
-    bottom: 0.65rem;
+    width: 150px;
+    height: 94px;
+    right: 0.5rem;
+    bottom: 0.5rem;
   }
 }
 
@@ -1305,6 +1315,40 @@ video.video-off {
   color: #f8fbff;
   font-size: 1.1rem;
   margin-bottom: 0.62rem;
+}
+
+/* Interview Details Toggle */
+.interview-info-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.62rem;
+}
+
+.interview-info-header h3 {
+  margin-bottom: 0;
+}
+
+.toggle-details-btn {
+  background: rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  border-radius: 6px;
+  color: #7dd3fc;
+  cursor: pointer;
+  font-size: 1rem;
+  padding: 0.35rem 0.6rem;
+  transition: all 0.2s ease;
+  line-height: 1;
+}
+
+.toggle-details-btn:hover {
+  background: rgba(59, 130, 246, 0.25);
+  border-color: rgba(59, 130, 246, 0.5);
+  transform: scale(1.05);
+}
+
+.toggle-details-btn:active {
+  transform: scale(0.95);
 }
 
 .progress-head-row {

@@ -358,6 +358,7 @@ export default function Interview() {
     }
   });
   const [isPostureChecking, setIsPostureChecking] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(true);
   const [skipReason, setSkipReason] = useState("too hard");
   const [livePostureStatus, setLivePostureStatus] = useState({
     level: "idle",
@@ -729,18 +730,6 @@ export default function Interview() {
       );
     }
 
-    const needsAnimatedAvatar = isSpeaking || avatarPosture !== "idle";
-
-    if (needsAnimatedAvatar) {
-      return (
-        <AvatarFigure
-          avatar={selectedAvatar}
-          isSpeaking={isSpeaking}
-          posture={avatarPosture}
-        />
-      );
-    }
-
     if (avatarPackStyle === "photo" && selectedAvatar.image) {
       return (
         <img
@@ -760,6 +749,7 @@ export default function Interview() {
       );
     }
 
+    // Default: Use animated AvatarFigure for all other cases
     return <AvatarFigure avatar={selectedAvatar} isSpeaking={isSpeaking} posture={avatarPosture} />;
   }, [avatarPackStyle, avatarPosture, embeddedAvatarRole, isSpeaking, selectedAvatar]);
 
@@ -2464,7 +2454,19 @@ export default function Interview() {
                 </div>
 
                 <div className="interview-info">
-                  <h3>Interview Details</h3>
+                  <div className="interview-info-header">
+                    <h3>Interview Details</h3>
+                    <button
+                      type="button"
+                      className="toggle-details-btn"
+                      onClick={() => setDetailsOpen(!detailsOpen)}
+                      aria-label={detailsOpen ? "Collapse interview details" : "Expand interview details"}
+                      aria-expanded={detailsOpen}
+                    >
+                      {detailsOpen ? '▼' : '▶'}
+                    </button>
+                  </div>
+                  {detailsOpen && (
                   <div className="interview-details-grid">
                     <button className="detail-button" type="button" aria-label="Interviewer details">
                       <span className="detail-icon">👤</span>
@@ -2550,6 +2552,7 @@ export default function Interview() {
                       </div>
                     </button>
                   </div>
+                  )}
                 </div>
 
                 <div className="interview-tips">
