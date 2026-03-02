@@ -358,6 +358,7 @@ export default function Interview() {
     }
   });
   const [isPostureChecking, setIsPostureChecking] = useState(false);
+  const [detailsOpen, setDetailsOpen] = useState(false);
   const [skipReason, setSkipReason] = useState("too hard");
   const [livePostureStatus, setLivePostureStatus] = useState({
     level: "idle",
@@ -2175,6 +2176,16 @@ export default function Interview() {
             {/* Interview Header */}
             <div className="interview-header">
               <h2 className="interview-title">{selectedAvatar?.name} Interview</h2>
+              <button
+                type="button"
+                className="details-icon-btn"
+                onClick={() => setDetailsOpen(!detailsOpen)}
+                aria-label={detailsOpen ? "Collapse interview details" : "Expand interview details"}
+                aria-expanded={detailsOpen}
+                title="Toggle interview details"
+              >
+                ℹ️
+              </button>
             </div>
             
             <div className="interview-main">
@@ -2377,6 +2388,95 @@ export default function Interview() {
 
               {/* Right Interview Detail Sidebar */}
               <div className="interview-sidebar">
+                {/* Interview Details Section */}
+                {detailsOpen && (
+                  <div className="interview-details-grid">
+                    <button className="detail-button" type="button" aria-label="Interviewer details">
+                      <span className="detail-icon">👤</span>
+                      <div className="detail-content">
+                        <span className="detail-label">Interviewer</span>
+                        <span className="detail-value">{selectedAvatar?.name}</span>
+                      </div>
+                    </button>
+                    
+                    <button className="detail-button" type="button" aria-label="Role details">
+                      <span className="detail-icon">💼</span>
+                      <div className="detail-content">
+                        <span className="detail-label">Role</span>
+                        <span className="detail-value">{selectedAvatar?.role}</span>
+                      </div>
+                    </button>
+                    
+                    <button className="detail-button" type="button" aria-label="Mode details">
+                      <span className="detail-icon">{useChat ? '💬' : '📹'}</span>
+                      <div className="detail-content">
+                        <span className="detail-label">Mode</span>
+                        <span className="detail-value">{useChat ? "Chat" : "Video"}</span>
+                      </div>
+                    </button>
+                    
+                    {selectedDomainName && (
+                      <button className="detail-button" type="button" aria-label="Domain details">
+                        <span className="detail-icon">📚</span>
+                        <div className="detail-content">
+                          <span className="detail-label">Domain</span>
+                          <span className="detail-value">{selectedDomainName}</span>
+                        </div>
+                      </button>
+                    )}
+                    
+                    {selectedDifficultyName && (
+                      <button className="detail-button" type="button" aria-label="Difficulty details">
+                        <span className="detail-icon">⚡</span>
+                        <div className="detail-content">
+                          <span className="detail-label">Difficulty</span>
+                          <span className="detail-value">{selectedDifficultyName}</span>
+                        </div>
+                      </button>
+                    )}
+                    
+                    {selectedInterviewTypeName && (
+                      <button className="detail-button" type="button" aria-label="Interview type details">
+                        <span className="detail-icon">🎯</span>
+                        <div className="detail-content">
+                          <span className="detail-label">Type</span>
+                          <span className="detail-value">{selectedInterviewTypeName}</span>
+                        </div>
+                      </button>
+                    )}
+                    
+                    <button className="detail-button" type="button" aria-label="Duration details">
+                      <span className="detail-icon">⏱️</span>
+                      <div className="detail-content">
+                        <span className="detail-label">Duration</span>
+                        <span className="detail-value">{formatTime(timeElapsed)}</span>
+                      </div>
+                    </button>
+                    
+                    <button className="detail-button detail-button-status" type="button" aria-label="AI status">
+                      <span className="detail-icon">
+                        {isAiTyping ? '🤔' : isSpeaking ? '🗣️' : '👂'}
+                      </span>
+                      <div className="detail-content">
+                        <span className="detail-label">AI Status</span>
+                        <span className="detail-value" style={{ color: isSpeaking ? "#10b981" : isAiTyping ? "#f59e0b" : "#3b82f6" }}>
+                          {isAiTyping ? "Thinking" : isSpeaking ? "Speaking" : "Listening"}
+                        </span>
+                      </div>
+                    </button>
+                    
+                    <button className="detail-button" type="button" aria-label="Posture monitor status">
+                      <span className="detail-icon">📊</span>
+                      <div className="detail-content">
+                        <span className="detail-label">Posture</span>
+                        <span className={`detail-value posture-monitor ${livePostureStatus.level}`}>
+                          {livePostureScore === null ? "--" : `${livePostureScore}/100`}
+                        </span>
+                      </div>
+                    </button>
+                  </div>
+                )}
+                
                 <div className="current-question">
                   <h3>Interview Progress</h3>
                   <div className="progress-inline-row">

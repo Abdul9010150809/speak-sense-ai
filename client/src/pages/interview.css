@@ -303,6 +303,32 @@ body {
   text-align: center;
 }
 
+.details-icon-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  background: rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(59, 130, 246, 0.4);
+  border-radius: 8px;
+  color: #7dd3fc;
+  cursor: pointer;
+  font-size: 1.4rem;
+  transition: all 0.25s ease;
+}
+
+.details-icon-btn:hover {
+  background: rgba(59, 130, 246, 0.25);
+  border-color: rgba(59, 130, 246, 0.6);
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+}
+
+.details-icon-btn:active {
+  transform: scale(0.98);
+}
+
 .timer-icon {
   font-size: 1.2rem;
 }
@@ -704,7 +730,7 @@ body {
   position: relative;
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-md);
+  gap: 1.5rem;
 }
 
 /* AI Avatar Panel */
