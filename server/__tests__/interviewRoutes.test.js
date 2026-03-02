@@ -60,4 +60,20 @@ describe('Interview routes', () => {
         expect(res.statusCode).toEqual(200);
         expect(res.body).toHaveProperty('isComplete', true);
     });
+
+    it('analyzes answer and returns verification scores', async () => {
+        const res = await request(app)
+            .post('/api/interview/analyze')
+            .send({
+                message: 'I improved our API performance by optimizing database indexes and reducing response time by 35 percent.',
+                question: 'Can you describe a time you improved backend API performance?'
+            });
+
+        expect(res.statusCode).toEqual(200);
+        expect(res.body).toHaveProperty('verification');
+        expect(res.body.verification).toHaveProperty('overallScore');
+        expect(res.body.verification).toHaveProperty('relevanceScore');
+        expect(res.body.verification).toHaveProperty('grammarScore');
+        expect(res.body.verification).toHaveProperty('correctnessLabel');
+    });
 });

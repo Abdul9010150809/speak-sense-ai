@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import './auth.css';
 import API from '../services/api';
+import { saveAuthSession } from '../utils/authStorage';
 
 const SignUp = () => {
   const navigate = useNavigate();
@@ -84,8 +85,12 @@ const SignUp = () => {
         });
 
         if (response.data) {
-          localStorage.setItem('token', response.data.token);
-          if (response.data.user) localStorage.setItem('user', JSON.stringify(response.data.user));
+          saveAuthSession({
+            token: response.data.token,
+            user: response.data.user,
+            rememberMe: true,
+            email: formData.email.trim().toLowerCase(),
+          });
           alert('Sign up successful! Please check your email to verify your account.');
           navigate('/dashboard');
         }
@@ -111,8 +116,12 @@ const SignUp = () => {
     setApiError('');
     API.post('/auth/social', { provider: normalizedProvider, mode: 'demo' })
       .then((res) => {
-        if (res.data?.token) localStorage.setItem('token', res.data.token);
-        if (res.data?.user) localStorage.setItem('user', JSON.stringify(res.data.user));
+        saveAuthSession({
+          token: res.data?.token,
+          user: res.data?.user,
+          rememberMe: true,
+          email: res.data?.user?.email || formData.email,
+        });
         navigate('/dashboard');
       })
       .catch((error) => {

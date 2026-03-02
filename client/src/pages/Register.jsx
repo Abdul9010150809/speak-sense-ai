@@ -35,12 +35,12 @@ const Register = () => {
   ];
 
   const interestOptions = [
-    'Technical Interviews',
+    'Software Engineering Interviews',
+    'Frontend / Backend Interviews',
+    'Data Science / ML Interviews',
+    'Product Management Interviews',
     'Behavioral Interviews',
-    'Management Interviews',
-    'Case Study Interviews',
-    'Salary Negotiation',
-    'Mock Presentations'
+    'System Design Interviews'
   ];
 
   const handleChange = (e) => {

@@ -104,6 +104,10 @@ tmp/
 temp/
 .history/
 
+# ── Datasets & Downloads ─────────────────
+datasets/
+*.crdownload
+
 # ── Misc ─────────────────────────────────
 *.tmp
 *.bak

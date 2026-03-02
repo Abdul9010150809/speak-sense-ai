@@ -1,22 +1,31 @@
-import { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useState, useEffect, useMemo } from "react";
+import { useNavigate, Link, useLocation } from "react-router-dom";
+import { getStoredUser } from "../utils/authStorage";
 import "./results.css";
+
+const toFiniteNumber = (value, fallback = 0) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : fallback;
+};
 
 export default function Results() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [activeTab, setActiveTab] = useState("overview");
   const [animatedScores, setAnimatedScores] = useState({});
   const [latestSummary, setLatestSummary] = useState(null);
+  const [latestReport, setLatestReport] = useState(null);
+  const [dbSaveStatus, setDbSaveStatus] = useState("unknown");
   const [profile, setProfile] = useState(() => {
     try {
-      return JSON.parse(localStorage.getItem("user") || "null");
+      return getStoredUser();
     } catch {
       return null;
     }
   });
 
   // Mock data for the interview results
-  const results = {
+  const fallbackResults = {
     overall: {
       score: 78,
       percentile: 85,
@@ -96,6 +105,7 @@ export default function Results() {
       {
         id: 1,
         question: "Tell me about yourself",
+        answer: "I am a software engineer with 4 years of experience building React and Node.js products.",
         score: 85,
         feedback: "Good introduction, could be more concise",
         strengths: ["Clear structure", "Relevant experience"],
@@ -104,6 +114,7 @@ export default function Results() {
       {
         id: 2,
         question: "Explain a challenging project",
+        answer: "I led a migration to microservices and reduced API latency by 38% after profiling bottlenecks.",
         score: 72,
         feedback: "Good technical details, needs more impact",
         strengths: ["Technical depth", "Problem explanation"],
@@ -112,6 +123,7 @@ export default function Results() {
       {
         id: 3,
         question: "How do you handle conflicts?",
+        answer: "I align on shared goals, listen actively, and agree on a clear action plan with owners and dates.",
         score: 88,
         feedback: "Excellent example, well-structured",
         strengths: ["Clear example", "Good resolution"],
@@ -120,6 +132,7 @@ export default function Results() {
       {
         id: 4,
         question: "Technical: Array manipulation",
+        answer: "I explained a two-pointer approach and then optimized memory by avoiding intermediate arrays.",
         score: 68,
         feedback: "Correct approach, needs optimization",
         strengths: ["Understanding of problem", "Basic solution"],
@@ -128,6 +141,7 @@ export default function Results() {
       {
         id: 5,
         question: "Future career goals",
+        answer: "I want to become a senior engineer focused on reliable distributed systems and mentoring teams.",
         score: 76,
         feedback: "Good vision, could be more specific",
         strengths: ["Clear direction", "Ambition shown"],
@@ -151,6 +165,109 @@ export default function Results() {
     }
   };
 
+  const results = useMemo(() => {
+    if (!latestReport?.overview) {
+      return fallbackResults;
+    }
+
+    const timeline = Array.isArray(latestReport.confidenceTimeline) && latestReport.confidenceTimeline.length
+      ? latestReport.confidenceTimeline
+      : fallbackResults.confidence.timeline;
+
+    const confidenceScore = Math.round(
+      timeline.reduce((sum, item) => sum + toFiniteNumber(item.level, 0), 0) / Math.max(timeline.length, 1)
+    );
+
+    const hasStoredQuestionAnalysis = Array.isArray(latestReport.questionAnalysis) && latestReport.questionAnalysis.length;
+
+    const questionAnalysis = hasStoredQuestionAnalysis
+      ? latestReport.questionAnalysis.map((item, index) => ({
+          id: item.id || index + 1,
+          question: item.question || `Interview question ${index + 1}`,
+          answer: item.answer || "",
+          score: toFiniteNumber(item.score, 0),
+          correctnessLabel: item.correctnessLabel || "",
+          feedback: item.feedback || "Answer reviewed successfully.",
+          strengths: Array.isArray(item.strengths) && item.strengths.length
+            ? item.strengths
+            : ["Attempted this question"],
+          improvements: Array.isArray(item.improvements) && item.improvements.length
+            ? item.improvements
+            : ["Add a more specific example"],
+        }))
+      : [];
+
+    const grammarMistakes = toFiniteNumber(latestReport.grammar?.mistakes, 0);
+    const grammarScore = toFiniteNumber(latestReport.grammar?.score, 0);
+    const reportOverviewScore = toFiniteNumber(latestReport.overview?.score, fallbackResults.overall.score);
+    const reportTimeSpentSeconds = toFiniteNumber(latestReport.overview?.timeSpentSeconds, 0);
+    const reportQuestionsAttempted = toFiniteNumber(latestReport.overview?.questionsAttempted, 0);
+    const reportTotalQuestions = toFiniteNumber(latestReport.overview?.totalQuestions, fallbackResults.overall.totalQuestions);
+    const reportWpm = toFiniteNumber(latestReport.speaking?.wordsPerMinute, 0);
+    const reportSpeakingClarity = toFiniteNumber(latestReport.speaking?.clarity, fallbackResults.speaking.clarity);
+    const reportPauses = toFiniteNumber(latestReport.speaking?.pauses, 0);
+    const reportFillerWords = toFiniteNumber(latestReport.speaking?.fillerWords, 0);
+
+    return {
+      overall: {
+        score: reportOverviewScore,
+        percentile: fallbackResults.overall.percentile,
+        grade: latestReport.overview?.grade || fallbackResults.overall.grade,
+        timeSpent: `${Math.max(1, Math.round(reportTimeSpentSeconds / 60))} minutes`,
+        questionsAttempted: reportQuestionsAttempted,
+        totalQuestions: reportTotalQuestions,
+      },
+      confidence: {
+        score: confidenceScore,
+        level: confidenceScore >= 80 ? "High" : confidenceScore >= 65 ? "Moderate" : "Low",
+        breakdown: [
+          { phase: "Opening", score: timeline[0]?.level || confidenceScore },
+          { phase: "Mid Interview", score: timeline[Math.floor(timeline.length / 2)]?.level || confidenceScore },
+          { phase: "Closing", score: timeline[timeline.length - 1]?.level || confidenceScore },
+        ],
+        timeline,
+      },
+      speaking: {
+        speed: reportWpm,
+        pace: reportWpm > 165
+          ? "Fast"
+          : reportWpm < 95
+            ? "Slow"
+            : "Moderate",
+        clarity: reportSpeakingClarity,
+        breakdown: fallbackResults.speaking.breakdown,
+        wordsPerMinute: reportWpm,
+        pauses: reportPauses,
+        fillerWords: reportFillerWords,
+      },
+      grammar: {
+        score: grammarScore,
+        mistakes: grammarMistakes,
+        categories: [
+          { type: "Detected Grammar Issues", count: grammarMistakes, severity: grammarMistakes >= 8 ? "high" : grammarMistakes >= 4 ? "medium" : "low" },
+          { type: "Sentence Quality", count: Math.max(0, Math.round((100 - grammarScore) / 8)), severity: grammarScore < 70 ? "medium" : "low" },
+        ],
+      },
+      sentenceStructure: fallbackResults.sentenceStructure,
+      categories: {
+        technical: toFiniteNumber(latestReport.categories?.technical, fallbackResults.categories.technical),
+        behavioral: toFiniteNumber(latestReport.categories?.behavioral, fallbackResults.categories.behavioral),
+        communication: toFiniteNumber(latestReport.categories?.communication, fallbackResults.categories.communication),
+        problemSolving: toFiniteNumber(latestReport.categories?.problemSolving, fallbackResults.categories.problemSolving),
+        clarity: toFiniteNumber(latestReport.categories?.clarity, fallbackResults.categories.clarity),
+      },
+      questionAnalysis,
+      feedback: {
+        positive: Array.isArray(latestReport.feedback?.positive) && latestReport.feedback.positive.length
+          ? latestReport.feedback.positive
+          : fallbackResults.feedback.positive,
+        improvements: Array.isArray(latestReport.feedback?.improvements) && latestReport.feedback.improvements.length
+          ? latestReport.feedback.improvements
+          : fallbackResults.feedback.improvements,
+      },
+    };
+  }, [latestReport]);
+
   // Calculate pie chart data
   const pieData = [
     { name: "Technical", value: results.categories.technical, color: "#4f9eff" },
@@ -161,13 +278,30 @@ export default function Results() {
   ];
 
   const total = pieData.reduce((sum, item) => sum + item.value, 0);
+  const safePieTotal = total > 0 ? total : 1;
+  const confidenceLevels = results.confidence.timeline.map((t) => toFiniteNumber(t.level, 0));
+  const peakConfidence = confidenceLevels.length ? Math.max(...confidenceLevels) : 0;
+  const lowestConfidence = confidenceLevels.length ? Math.min(...confidenceLevels) : 0;
 
   useEffect(() => {
     try {
       const summary = JSON.parse(localStorage.getItem("latestInterviewSummary") || "null");
       setLatestSummary(summary);
+      const report = JSON.parse(localStorage.getItem("latestInterviewReport") || "null");
+      setLatestReport(report);
+
+      const routeStatus = location.state?.dbSaveStatus;
+      const storedStatus = localStorage.getItem("latestInterviewDbSaveStatus");
+      const resolvedStatus = routeStatus || storedStatus || "unknown";
+      setDbSaveStatus(resolvedStatus);
+
+      if (routeStatus) {
+        localStorage.setItem("latestInterviewDbSaveStatus", routeStatus);
+      }
     } catch {
       setLatestSummary(null);
+      setLatestReport(null);
+      setDbSaveStatus("unknown");
     }
 
     const timer = setTimeout(() => {
@@ -180,7 +314,18 @@ export default function Results() {
       });
     }, 500);
     return () => clearTimeout(timer);
-  }, []);
+  }, [location.state, results]);
+
+  const getCorrectnessBadge = (question) => {
+    const label = question?.correctnessLabel;
+    if (label === "correct") return { text: "✅ Correct", className: "correct" };
+    if (label === "partially-correct") return { text: "🟡 Partially Correct", className: "partial" };
+    if (label === "needs-improvement") return { text: "❌ Needs Improvement", className: "incorrect" };
+
+    if ((question?.score || 0) >= 80) return { text: "✅ Correct", className: "correct" };
+    if ((question?.score || 0) >= 65) return { text: "🟡 Partially Correct", className: "partial" };
+    return { text: "❌ Needs Improvement", className: "incorrect" };
+  };
 
   return (
     <div className="results-page">
@@ -214,6 +359,14 @@ export default function Results() {
             </Link>
           </div>
         </div>
+
+        {dbSaveStatus !== "unknown" && (
+          <div className={`db-save-status ${dbSaveStatus === "saved" ? "saved" : "failed"}`} role="status" aria-live="polite">
+            {dbSaveStatus === "saved"
+              ? "✅ Saved to database"
+              : "⚠️ Could not save to database. Showing local results for this session."}
+          </div>
+        )}
 
         {/* Navigation Tabs */}
         <div className="results-tabs">
@@ -333,14 +486,14 @@ export default function Results() {
                       {pieData.map((item, index) => {
                         const rotation = pieData
                           .slice(0, index)
-                          .reduce((sum, i) => sum + (i.value / total) * 360, 0);
+                          .reduce((sum, i) => sum + (i.value / safePieTotal) * 360, 0);
                         
                         return (
                           <div
                             key={item.name}
                             className="pie-slice"
                             style={{
-                              background: `conic-gradient(from ${rotation}deg, ${item.color} ${(item.value / total) * 360}deg, transparent ${(item.value / total) * 360}deg)`,
+                              background: `conic-gradient(from ${rotation}deg, ${item.color} ${(item.value / safePieTotal) * 360}deg, transparent ${(item.value / safePieTotal) * 360}deg)`,
                             }}
                           >
                             <div className="slice-tooltip">
@@ -476,14 +629,14 @@ export default function Results() {
                       <span className="stat-icon">📈</span>
                       <div>
                         <strong>Peak</strong>
-                        <p>{Math.max(...results.confidence.timeline.map(t => t.level))}%</p>
+                        <p>{peakConfidence}%</p>
                       </div>
                     </div>
                     <div className="stat-item">
                       <span className="stat-icon">📉</span>
                       <div>
                         <strong>Lowest</strong>
-                        <p>{Math.min(...results.confidence.timeline.map(t => t.level))}%</p>
+                        <p>{lowestConfidence}%</p>
                       </div>
                     </div>
                   </div>
@@ -609,13 +762,25 @@ export default function Results() {
           {activeTab === 'questions' && (
             <div className="questions-tab">
               <h2>Question Analysis</h2>
+
+              {results.questionAnalysis.length === 0 && (
+                <div className="question-empty-state" role="status">
+                  No captured question-answer pairs were found for this session. Complete at least one response to generate detailed Q&A analysis.
+                </div>
+              )}
               
               <div className="questions-list">
-                {results.questionAnalysis.map((q, index) => (
+                {results.questionAnalysis.map((q, index) => {
+                  const badge = getCorrectnessBadge(q);
+
+                  return (
                   <div key={q.id} className="question-card">
                     <div className="question-header">
                       <span className="question-number">Q{index + 1}</span>
-                      <h3>{q.question}</h3>
+                      <div className="question-meta">
+                        <h3>{q.question}</h3>
+                        <span className={`question-correctness-badge ${badge.className}`}>{badge.text}</span>
+                      </div>
                       <div className="question-score" style={{
                         background: `conic-gradient(${q.score >= 80 ? '#48bb78' : q.score >= 60 ? '#f6ad55' : '#f56565'} ${q.score * 3.6}deg, #1a2634 ${q.score * 3.6}deg)`
                       }}>
@@ -624,6 +789,11 @@ export default function Results() {
                     </div>
                     
                     <p className="question-feedback">{q.feedback}</p>
+
+                    <div className="question-answer">
+                      <h4>Your Answer</h4>
+                      <p>{q.answer?.trim() ? q.answer : "No answer captured for this question."}</p>
+                    </div>
                     
                     <div className="question-details">
                       <div className="strengths">
@@ -645,7 +815,7 @@ export default function Results() {
                       </div>
                     </div>
                   </div>
-                ))}
+                )})}
               </div>
             </div>
           )}

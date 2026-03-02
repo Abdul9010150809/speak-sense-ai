@@ -1,6 +1,7 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect, useRef } from "react";
 import API from "../services/api";
+import { clearAuthSession, getAuthToken, getStoredUser, saveStoredUser } from "../utils/authStorage";
 import "./dashboard.css";
 
 export default function Dashboard() {
@@ -14,7 +15,7 @@ export default function Dashboard() {
 
   const [user, setUser] = useState(() => {
     try {
-      const stored = JSON.parse(localStorage.getItem("user") || "null");
+      const stored = getStoredUser();
       return {
         name: stored?.name || "Alex Johnson",
         avatar: "👨‍💻",
@@ -85,13 +86,13 @@ export default function Dashboard() {
   }, []);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
+    const token = getAuthToken();
     if (!token) return;
 
     API.get("/auth/me")
       .then((res) => {
         if (res.data?.user) {
-          localStorage.setItem("user", JSON.stringify(res.data.user));
+          saveStoredUser(res.data.user);
           setUser((prev) => ({
             ...prev,
             name: res.data.user.name || prev.name,
@@ -120,9 +121,15 @@ export default function Dashboard() {
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("user");
+    clearAuthSession();
     navigate("/login");
+  };
+
+  const handleMarkAllAsRead = () => {
+    setUser((prev) => ({
+      ...prev,
+      notifications: 0,
+    }));
   };
 
   return (
@@ -215,7 +222,9 @@ export default function Dashboard() {
               <div className="dropdown-menu notifications-menu">
                 <div className="dropdown-header">
                   <h4>Notifications</h4>
-                  <span className="mark-read">Mark all as read</span>
+                  <button type="button" className="mark-read" onClick={handleMarkAllAsRead}>
+                    Mark all as read
+                  </button>
                 </div>
                 <div className="notification-item unread">
                   <span className="noti-icon">📊</span>

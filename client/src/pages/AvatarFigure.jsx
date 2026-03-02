@@ -1,46 +1,63 @@
-import React, { useMemo, useEffect, useRef, useState, memo } from 'react';
+// AvatarFigure.jsx
+import React, { useMemo, useEffect, useRef, useState, memo, useCallback } from 'react';
 import PropTypes from 'prop-types';
-import './AvatarFigure.css'; // Ensure CSS animations are imported
+import './AvatarFigure.css';
 
-// ==================== CONSTANTS & CONFIG ====================
+// ==================== GAME-STYLE AVATAR CONFIG ====================
 const AVATAR_CONFIG = {
   skin: {
-    male: '#FCCDA4',
-    female: '#FDDBB4',
-    innerEar: '#e8a886',
-    nose: '#c8946a',
-    lips: '#dd8a6c',
-    blush: '#f9a8d4'
+    default: '#FDDBB4',
+    dark: '#C68B5E',
+    light: '#FCE5CD',
+    tan: '#E0AC69',
+    pale: '#FFE0C0'
   },
   hair: {
-    male: '#2E1A0E',
-    female: '#5C3A1E',
-    highlight: '#7a4f2e',
-    gray: '#808080',
+    black: '#1A1A1A',
+    brown: '#5C3A1E',
     blonde: '#D4A76A',
-    red: '#B84A3A'
+    red: '#B84A3A',
+    blue: '#3B82F6',
+    pink: '#EC4899',
+    purple: '#8B5CF6',
+    silver: '#94A3B8'
+  },
+  outfit: {
+    casual: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444'],
+    formal: ['#1F2937', '#4B5563', '#6B7280', '#111827'],
+    sporty: ['#DC2626', '#2563EB', '#16A34A', '#EAB308'],
+    gamer: ['#8B5CF6', '#EC4899', '#6366F1', '#06B6D4']
   },
   eyes: {
-    male: '#1e40af',
-    female: '#7c3aed',
     brown: '#634832',
     green: '#2e7d32',
-    blue: '#1976d2'
+    blue: '#1976d2',
+    gray: '#475569'
   },
   animation: {
-    speakingDuration: 3000,
-    thinkingDuration: 2000,
-    nodDuration: 1500,
+    idle: 3000,
+    speaking: 2000,
+    listening: 2500,
+    thinking: 2800,
+    nod: 1500,
+    gesture: 1800,
     blinkInterval: 4000,
-    breathInterval: 3000
+    blinkDuration: 150,
+    breatheIntensity: 0.3
+  },
+  sizes: {
+    sm: { width: 120, height: 160, scale: 0.6 },
+    md: { width: 200, height: 260, scale: 1 },
+    lg: { width: 280, height: 360, scale: 1.4 },
+    xl: { width: 360, height: 460, scale: 1.8 }
+  },
+  expressions: {
+    neutral: { brows: 'neutral', eyes: 'normal', mouth: 'neutral' },
+    smile: { brows: 'neutral', eyes: 'happy', mouth: 'smile' },
+    thinking: { brows: 'thinking', eyes: 'thinking', mouth: 'thinking' },
+    surprised: { brows: 'raised', eyes: 'wide', mouth: 'surprised' },
+    serious: { brows: 'serious', eyes: 'normal', mouth: 'serious' }
   }
-};
-
-const ANIMAL_PERSONALITIES = {
-  owl: { class: 'animal-personality-calm', traits: ['wise', 'calm', 'observant'] },
-  fox: { class: 'animal-personality-energetic', traits: ['clever', 'quick', 'playful'] },
-  panda: { class: 'animal-personality-gentle', traits: ['gentle', 'patient', 'kind'] },
-  default: { class: 'animal-personality-default', traits: ['friendly', 'engaging'] }
 };
 
 // ==================== PROP TYPES ====================
@@ -49,112 +66,102 @@ export const AvatarPropTypes = {
     id: PropTypes.oneOfType([PropTypes.string, PropTypes.number]),
     name: PropTypes.string.isRequired,
     gender: PropTypes.oneOf(['male', 'female', 'non-binary']),
-    species: PropTypes.string,
     role: PropTypes.string,
-    color: PropTypes.string,
-    bgColor: PropTypes.string,
-    avatar: PropTypes.string,
-    hairColor: PropTypes.oneOf(['dark', 'blonde', 'red', 'gray']),
-    eyeColor: PropTypes.oneOf(['blue', 'brown', 'green', 'default'])
+    style: PropTypes.oneOf(['casual', 'formal', 'sporty', 'gamer']),
+    hairColor: PropTypes.oneOf(['black', 'brown', 'blonde', 'red', 'blue', 'pink', 'purple', 'silver']),
+    eyeColor: PropTypes.oneOf(['brown', 'green', 'blue', 'gray']),
+    skinTone: PropTypes.oneOf(['default', 'dark', 'light', 'tan', 'pale']),
+    outfitColor: PropTypes.string,
+    accessory: PropTypes.oneOf(['glasses', 'headphones', 'cap', 'none']),
+    emotion: PropTypes.oneOf(['neutral', 'smile', 'thinking', 'surprised', 'serious'])
   }),
-  isSpeaking: PropTypes.bool,
-  posture: PropTypes.oneOf(['idle', 'thinking', 'speaking', 'listening', 'nodding']),
-  onAnimationComplete: PropTypes.func,
+  state: PropTypes.oneOf(['idle', 'speaking', 'listening', 'thinking', 'nodding', 'gesturing']),
+  isActive: PropTypes.bool,
+  onStateChange: PropTypes.func,
   size: PropTypes.oneOf(['sm', 'md', 'lg', 'xl']),
   interactive: PropTypes.bool,
   onClick: PropTypes.func,
   className: PropTypes.string,
-  ariaLabel: PropTypes.string
+  ariaLabel: PropTypes.string,
+  priority: PropTypes.bool,
+  showNameplate: PropTypes.bool,
+  showStatus: PropTypes.bool
 };
 
 // ==================== UTILITY FUNCTIONS ====================
-const getHairColor = (hairColor, gender) => {
-  const colorMap = {
-    dark: gender === 'female' ? AVATAR_CONFIG.hair.female : AVATAR_CONFIG.hair.male,
-    blonde: AVATAR_CONFIG.hair.blonde,
-    red: AVATAR_CONFIG.hair.red,
-    gray: AVATAR_CONFIG.hair.gray
-  };
-  return colorMap[hairColor] || (gender === 'female' ? AVATAR_CONFIG.hair.female : AVATAR_CONFIG.hair.male);
+const getSkinColor = (skinTone) => {
+  return AVATAR_CONFIG.skin[skinTone] || AVATAR_CONFIG.skin.default;
+};
+
+const getHairColor = (hairColor) => {
+  return AVATAR_CONFIG.hair[hairColor] || AVATAR_CONFIG.hair.brown;
 };
 
 const getEyeColor = (eyeColor) => {
-  const colorMap = {
-    blue: AVATAR_CONFIG.eyes.blue,
-    brown: AVATAR_CONFIG.eyes.brown,
-    green: AVATAR_CONFIG.eyes.green
-  };
-  return colorMap[eyeColor] || AVATAR_CONFIG.eyes.male;
+  return AVATAR_CONFIG.eyes[eyeColor] || AVATAR_CONFIG.eyes.brown;
 };
 
-const getAnimalPersonality = (avatar) => {
-  const name = (avatar?.name || '').toLowerCase();
-  const role = (avatar?.role || '').toLowerCase();
-  const icon = avatar?.avatar || '';
-
-  if (name.includes('luna') || role.includes('owl') || icon === '🦉') return ANIMAL_PERSONALITIES.owl;
-  if (name.includes('rex') || role.includes('fox') || icon === '🦊') return ANIMAL_PERSONALITIES.fox;
-  if (name.includes('coco') || role.includes('panda') || icon === '🐼') return ANIMAL_PERSONALITIES.panda;
-  return ANIMAL_PERSONALITIES.default;
+const getOutfitColors = (style, customColor) => {
+  const colors = AVATAR_CONFIG.outfit[style] || AVATAR_CONFIG.outfit.casual;
+  if (customColor) {
+    return [customColor, ...colors.slice(1)];
+  }
+  return colors;
 };
 
-const getPostureClass = (isSpeaking, posture) => {
-  if (isSpeaking) return 'avatar-speaking';
-  
-  const postureMap = {
-    thinking: 'avatar-thinking',
-    nodding: 'avatar-nodding',
-    listening: 'avatar-listening',
-    idle: 'avatar-idle'
-  };
-  
-  return postureMap[posture] || 'avatar-idle';
+const getAvatarSeed = (avatar) => {
+  if (avatar?.id) return Math.abs(Number(avatar.id) || 0);
+  const key = `${avatar?.name || ''}${avatar?.role || ''}`;
+  return key.split('').reduce((a, b) => a + b.charCodeAt(0), 0) || 1;
 };
 
-// ==================== HOOKS ====================
-const useAvatarAnimations = (isSpeaking, posture, onAnimationComplete) => {
-  const [localIsSpeaking, setLocalIsSpeaking] = useState(isSpeaking);
-  const [localPosture, setLocalPosture] = useState(posture);
-  const speakingTimerRef = useRef(null);
-  const postureTimerRef = useRef(null);
+// ==================== CUSTOM HOOKS ====================
+const useAvatarState = (initialState = 'idle', onStateChange) => {
+  const [currentState, setCurrentState] = useState(initialState);
+  const [expression, setExpression] = useState('neutral');
+  const timersRef = useRef({});
+
+  const transitionTo = useCallback((newState, duration) => {
+    setCurrentState(newState);
+    
+    // Clear existing timer for this state
+    if (timersRef.current[newState]) {
+      clearTimeout(timersRef.current[newState]);
+    }
+
+    // Set auto-transition back to idle
+    if (duration && newState !== 'idle') {
+      timersRef.current[newState] = setTimeout(() => {
+        setCurrentState('idle');
+        setExpression('neutral');
+        onStateChange?.('idle');
+      }, duration);
+    }
+
+    onStateChange?.(newState);
+  }, [onStateChange]);
+
+  // Update expression based on state
+  useEffect(() => {
+    const expressionMap = {
+      speaking: 'smile',
+      listening: 'neutral',
+      thinking: 'thinking',
+      nodding: 'smile',
+      gesturing: 'smile',
+      idle: 'neutral'
+    };
+    
+    if (currentState !== 'idle') {
+      setExpression(expressionMap[currentState] || 'neutral');
+    }
+  }, [currentState]);
 
   useEffect(() => {
-    // Sync with props
-    setLocalIsSpeaking(isSpeaking);
-    setLocalPosture(posture);
+    return () => Object.values(timersRef.current).forEach(clearTimeout);
+  }, []);
 
-    // Handle animation completion
-    if (isSpeaking) {
-      clearTimeout(speakingTimerRef.current);
-      speakingTimerRef.current = setTimeout(() => {
-        setLocalIsSpeaking(false);
-        onAnimationComplete?.('speaking');
-      }, AVATAR_CONFIG.animation.speakingDuration);
-    }
-
-    if (posture === 'nodding') {
-      clearTimeout(postureTimerRef.current);
-      postureTimerRef.current = setTimeout(() => {
-        setLocalPosture('idle');
-        onAnimationComplete?.('nodding');
-      }, AVATAR_CONFIG.animation.nodDuration);
-    }
-
-    if (posture === 'thinking') {
-      clearTimeout(postureTimerRef.current);
-      postureTimerRef.current = setTimeout(() => {
-        setLocalPosture('idle');
-        onAnimationComplete?.('thinking');
-      }, AVATAR_CONFIG.animation.thinkingDuration);
-    }
-
-    return () => {
-      clearTimeout(speakingTimerRef.current);
-      clearTimeout(postureTimerRef.current);
-    };
-  }, [isSpeaking, posture, onAnimationComplete]);
-
-  return { localIsSpeaking, localPosture };
+  return { currentState, expression, transitionTo };
 };
 
 const useBlinkAnimation = () => {
@@ -165,528 +172,398 @@ const useBlinkAnimation = () => {
     const scheduleBlink = () => {
       blinkTimerRef.current = setTimeout(() => {
         setIsBlinking(true);
-        setTimeout(() => setIsBlinking(false), 150);
+        setTimeout(() => setIsBlinking(false), AVATAR_CONFIG.animation.blinkDuration);
         scheduleBlink();
       }, AVATAR_CONFIG.animation.blinkInterval);
     };
 
     scheduleBlink();
-
     return () => clearTimeout(blinkTimerRef.current);
   }, []);
 
   return isBlinking;
 };
 
-// ==================== SVG COMPONENTS ====================
+const useIdleAnimation = (isActive) => {
+  const [idleMotion, setIdleMotion] = useState({ rotate: 0, translateY: 0 });
 
-const AvatarDefs = memo(({ suiteColor, hasGlow = true }) => (
+  useEffect(() => {
+    if (!isActive) return;
+
+    let frame;
+    let startTime = Date.now();
+
+    const animate = () => {
+      const elapsed = (Date.now() - startTime) / 1000;
+      // Subtle breathing and floating motion
+      const breathe = Math.sin(elapsed * 2) * AVATAR_CONFIG.animation.breatheIntensity;
+      const float = Math.sin(elapsed * 1.5) * 2;
+      
+      setIdleMotion({
+        rotate: breathe * 0.5,
+        translateY: float
+      });
+
+      frame = requestAnimationFrame(animate);
+    };
+
+    frame = requestAnimationFrame(animate);
+    return () => cancelAnimationFrame(frame);
+  }, [isActive]);
+
+  return idleMotion;
+};
+
+// ==================== SVG COMPONENTS ====================
+const AvatarDefs = memo(({ primaryColor, hasGlow = false }) => (
   <defs>
+    <linearGradient id="hairGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stopColor="currentColor" stopOpacity="0.9" />
+      <stop offset="100%" stopColor="currentColor" stopOpacity="0.6" />
+    </linearGradient>
+    
+    <radialGradient id="skinGradient" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stopColor="currentColor" stopOpacity="1" />
+      <stop offset="100%" stopColor="currentColor" stopOpacity="0.8" />
+    </radialGradient>
+    
+    <filter id="softShadow">
+      <feDropShadow dx="0" dy="4" stdDeviation="4" floodColor="#000" floodOpacity="0.15" />
+    </filter>
+    
     {hasGlow && (
-      <radialGradient id="glowGrad" cx="50%" cy="50%" r="50%">
-        <stop offset="0%" stopColor={suiteColor} stopOpacity="0.3" />
-        <stop offset="100%" stopColor={suiteColor} stopOpacity="0" />
-      </radialGradient>
+      <filter id="glow">
+        <feGaussianBlur stdDeviation="4" result="coloredBlur"/>
+        <feMerge>
+          <feMergeNode in="coloredBlur"/>
+          <feMergeNode in="SourceGraphic"/>
+        </feMerge>
+      </filter>
     )}
-    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
-      <feDropShadow dx="0" dy="4" stdDeviation="6" floodColor="#000" floodOpacity="0.2" />
-    </filter>
-    <filter id="speakingGlow">
-      <feGaussianBlur in="SourceAlpha" stdDeviation="4" />
-      <feMerge>
-        <feMergeNode in="offsetblur" />
-        <feMergeNode in="SourceGraphic" />
-      </feMerge>
-    </filter>
+    
+    <clipPath id="avatarClip">
+      <circle cx="100" cy="120" r="80" />
+    </clipPath>
   </defs>
 ));
 
 AvatarDefs.displayName = 'AvatarDefs';
 
-const Body = memo(({ suiteShade, isFemale, suiteColor, hasTie = true }) => (
-  <>
-    {/* Jacket with texture */}
-    <rect x="52" y="185" width="96" height="130" rx="20" fill={suiteShade} filter="url(#softShadow)" />
+const Head = memo(({ skinColor, expression, isBlinking, isActive }) => {
+  const eyeWidth = isBlinking ? 12 : 14;
+  const eyeHeight = isBlinking ? 2 : 10;
+  
+  const getBrowPath = (side) => {
+    const baseY = expression === 'thinking' ? 90 : 92;
+    const baseX = side === 'left' ? 68 : 92;
     
-    {/* Shirt with subtle pattern */}
-    <rect x="58" y="190" width="84" height="120" rx="15" fill="white" opacity="0.15" />
-    
-    {/* Collar */}
-    <polygon points="85,185 100,210 115,185" fill="white" opacity="0.9" />
-    
-    {/* Lapels with highlight */}
-    <polygon points="85,185 70,200 85,215 100,210" fill={suiteShade} opacity="0.9" />
-    <polygon points="115,185 130,200 115,215 100,210" fill={suiteShade} opacity="0.9" />
-    
-    {/* Tie/Jewelry with animation */}
-    {!isFemale && hasTie && (
-      <g className="avatar-tie">
-        <polygon points="100,205 106,225 100,260 94,225" fill="#c53030" />
-        <polygon points="100,205 106,215 100,225 94,215" fill="#9b2c2c" />
-      </g>
-    )}
-    {isFemale && (
-      <g className="avatar-necklace">
-        <circle cx="100" cy="215" r="5" fill={suiteColor} />
-        <circle cx="100" cy="225" r="3" fill={suiteColor} opacity="0.7" />
-      </g>
-    )}
-    
-    {/* Buttons with shine */}
-    {!isFemale && (
-      <g className="avatar-buttons">
-        <circle cx="100" cy="240" r="3" fill="rgba(255,255,255,0.4)" />
-        <circle cx="100" cy="258" r="3" fill="rgba(255,255,255,0.4)" />
-        <circle cx="100" cy="276" r="3" fill="rgba(255,255,255,0.4)" />
-        <circle cx="100" cy="240" r="1" fill="white" />
-        <circle cx="100" cy="258" r="1" fill="white" />
-        <circle cx="100" cy="276" r="1" fill="white" />
-      </g>
-    )}
-  </>
-));
-
-Body.displayName = 'Body';
-
-const Arms = memo(({ suiteShade, skinColor, isPointing = false }) => (
-  <>
-    {/* Left arm with slight rotation */}
-    <g className={`avatar-left-arm ${isPointing ? 'pointing' : ''}`}>
-      <rect x="20" y="188" width="32" height="90" rx="14" fill={suiteShade} />
-      <ellipse cx="36" cy="285" rx="14" ry="12" fill={skinColor} />
-      {/* Hand detail */}
-      <path d="M30 280 Q36 275 42 280" stroke={skinColor} strokeWidth="2" fill="none" />
-    </g>
-    
-    {/* Right arm with gesture support */}
-    <g className={`avatar-right-arm ${isPointing ? 'gesturing' : ''}`}>
-      <rect x="148" y="188" width="32" height="90" rx="14" fill={suiteShade} />
-      <ellipse cx="164" cy="285" rx="14" ry="12" fill={skinColor} />
-      {/* Hand detail */}
-      <path d="M158 280 Q164 275 170 280" stroke={skinColor} strokeWidth="2" fill="none" />
-    </g>
-  </>
-));
-
-Arms.displayName = 'Arms';
-
-const Hair = memo(({ isFemale, hairColor, style = 'modern' }) => {
-  const hairStyles = {
-    modern: isFemale ? (
-      <>
-        <ellipse cx="60" cy="145" rx="18" ry="45" fill={hairColor} />
-        <ellipse cx="140" cy="145" rx="18" ry="45" fill={hairColor} />
-        <ellipse cx="100" cy="100" rx="44" ry="28" fill={hairColor} />
-        <ellipse cx="90" cy="98" rx="10" ry="6" fill={AVATAR_CONFIG.hair.highlight} opacity="0.5" />
-      </>
-    ) : (
-      <>
-        <ellipse cx="100" cy="97" rx="44" ry="20" fill={hairColor} />
-        <ellipse cx="80" cy="95" rx="12" ry="8" fill={hairColor} />
-        <ellipse cx="115" cy="93" rx="10" ry="7" fill={hairColor} />
-      </>
-    ),
-    classic: isFemale ? (
-      <>
-        <path d="M56 100 Q80 90 144 100" fill={hairColor} />
-        <ellipse cx="100" cy="105" rx="44" ry="25" fill={hairColor} />
-      </>
-    ) : (
-      <ellipse cx="100" cy="97" rx="44" ry="18" fill={hairColor} />
-    )
+    if (expression === 'surprised') {
+      return `M${baseX},${baseY-2} Q${baseX+12},${baseY-8} ${baseX+24},${baseY-2}`;
+    }
+    if (expression === 'serious') {
+      return `M${baseX},${baseY} Q${baseX+12},${baseY-4} ${baseX+24},${baseY}`;
+    }
+    return `M${baseX},${baseY} Q${baseX+12},${baseY-6} ${baseX+24},${baseY-2}`;
   };
-
-  return hairStyles[style] || hairStyles.modern;
-});
-
-Hair.displayName = 'Hair';
-
-const Eyes = memo(({ isFemale, eyeColor, isBlinking, expression = 'neutral' }) => {
-  const eyeExpressions = {
-    neutral: { left: "82,129", right: "118,129" },
-    surprised: { left: "82,127", right: "118,127" },
-    thinking: { left: "82,131", right: "118,131" }
-  };
-
-  const exp = eyeExpressions[expression] || eyeExpressions.neutral;
-
-  if (isBlinking) {
-    return (
-      <>
-        <path d="M72 128 Q82 122 92 128" stroke="#111" strokeWidth="2" fill="none" />
-        <path d="M108 128 Q118 122 128 128" stroke="#111" strokeWidth="2" fill="none" />
-      </>
-    );
-  }
 
   return (
-    <>
-      {/* Left eye */}
-      <ellipse className="avatar-eye avatar-eye-left" cx="82" cy="128" rx="10" ry="9" fill="white" />
-      <ellipse className="avatar-iris avatar-iris-left" cx={exp.left.split(',')[0]} cy={exp.left.split(',')[1]} rx="6" ry="6" fill={eyeColor} />
-      <ellipse className="avatar-pupil avatar-pupil-left" cx={exp.left.split(',')[0]} cy={exp.left.split(',')[1]} rx="3.5" ry="3.5" fill="#111" />
-      <circle cx={Number(exp.left.split(',')[0]) + 2} cy={Number(exp.left.split(',')[1]) - 2} r="1.5" fill="white" />
-
-      {/* Right eye */}
-      <ellipse className="avatar-eye avatar-eye-right" cx="118" cy="128" rx="10" ry="9" fill="white" />
-      <ellipse className="avatar-iris avatar-iris-right" cx={exp.right.split(',')[0]} cy={exp.right.split(',')[1]} rx="6" ry="6" fill={eyeColor} />
-      <ellipse className="avatar-pupil avatar-pupil-right" cx={exp.right.split(',')[0]} cy={exp.right.split(',')[1]} rx="3.5" ry="3.5" fill="#111" />
-      <circle cx={Number(exp.right.split(',')[0]) + 2} cy={Number(exp.right.split(',')[1]) - 2} r="1.5" fill="white" />
-
-      {/* Eye lashes for female */}
-      {isFemale && (
-        <>
-          <path d="M74 120 Q78 116 82 119" stroke={AVATAR_CONFIG.hair.female} strokeWidth="1.5" fill="none" strokeLinecap="round" />
-          <path d="M110 119 Q114 116 118 120" stroke={AVATAR_CONFIG.hair.female} strokeWidth="1.5" fill="none" strokeLinecap="round" />
-        </>
+    <g className="avatar-head" filter="url(#softShadow)">
+      {/* Head base */}
+      <circle cx="100" cy="120" r="40" fill={skinColor} />
+      
+      {/* Hair base */}
+      <path d="M70 80 Q100 60 130 80 L130 100 Q100 85 70 100 Z" fill="url(#hairGradient)" />
+      
+      {/* Ears */}
+      <circle cx="60" cy="120" r="10" fill={skinColor} />
+      <circle cx="140" cy="120" r="10" fill={skinColor} />
+      
+      {/* Eyebrows */}
+      <path d={getBrowPath('left')} stroke="#1F2937" strokeWidth="3" fill="none" strokeLinecap="round" />
+      <path d={getBrowPath('right')} stroke="#1F2937" strokeWidth="3" fill="none" strokeLinecap="round" />
+      
+      {/* Eyes */}
+      <g className="avatar-eyes">
+        {/* Left eye */}
+        <ellipse cx="80" cy="110" rx={eyeWidth} ry={eyeHeight} fill="white" />
+        {!isBlinking && (
+          <>
+            <circle cx="80" cy="110" r="4" fill={getEyeColor('brown')} />
+            <circle cx="82" cy="108" r="1.5" fill="white" />
+          </>
+        )}
+        
+        {/* Right eye */}
+        <ellipse cx="120" cy="110" rx={eyeWidth} ry={eyeHeight} fill="white" />
+        {!isBlinking && (
+          <>
+            <circle cx="120" cy="110" r="4" fill={getEyeColor('brown')} />
+            <circle cx="122" cy="108" r="1.5" fill="white" />
+          </>
+        )}
+      </g>
+      
+      {/* Nose */}
+      <path d="M95 125 L100 135 L105 125" stroke="#8B5A2B" strokeWidth="2" fill="none" />
+      
+      {/* Mouth */}
+      {expression === 'smile' && (
+        <path d="M85 145 Q100 155 115 145" stroke="#E11D48" strokeWidth="3" fill="none" strokeLinecap="round" />
       )}
-    </>
-  );
-});
-
-Eyes.displayName = 'Eyes';
-
-const Mouth = memo(({ expression = 'neutral' }) => {
-  const mouthShapes = {
-    neutral: "M85 160 Q100 155 115 160",
-    smile: "M85 160 Q100 170 115 160",
-    thinking: "M85 160 Q100 152 115 160",
-    speaking: "M85 155 Q100 170 115 155"
-  };
-
-  return (
-    <g className="avatar-mouth">
-      <ellipse className="avatar-jaw" cx="100" cy="161" rx="13" ry="7" fill={AVATAR_CONFIG.skin.nose} opacity="0.2" />
-      <path
-        d={mouthShapes[expression] || mouthShapes.neutral}
-        stroke={AVATAR_CONFIG.skin.nose}
-        strokeWidth="2"
-        fill="none"
-        strokeLinecap="round"
-      />
-      <path 
-        d="M85 160 Q92 155 100 156 Q108 155 115 160 Q107 163 100 164 Q93 163 85 160 Z"
-        fill={AVATAR_CONFIG.skin.lips}
-      />
+      {expression === 'neutral' && (
+        <path d="M90 145 L110 145" stroke="#E11D48" strokeWidth="3" fill="none" strokeLinecap="round" />
+      )}
+      {expression === 'thinking' && (
+        <path d="M85 150 Q100 145 115 150" stroke="#E11D48" strokeWidth="3" fill="none" strokeLinecap="round" />
+      )}
+      {expression === 'surprised' && (
+        <circle cx="100" cy="145" r="5" fill="#E11D48" />
+      )}
     </g>
   );
 });
-
-Mouth.displayName = 'Mouth';
-
-const Head = memo(({ 
-  isFemale, 
-  skinColor, 
-  hairColor, 
-  eyeColor, 
-  isBlinking, 
-  expression,
-  hairStyle 
-}) => (
-  <g className="avatar-head">
-    {/* Head shape with subtle shadow */}
-    <ellipse cx="100" cy="140" rx="44" ry="50" fill={skinColor} filter="url(#softShadow)" />
-    
-    {/* Hair */}
-    <Hair isFemale={isFemale} hairColor={hairColor} style={hairStyle} />
-    
-    {/* Neck */}
-    <rect x="89" y="165" width="22" height="28" rx="6" fill={skinColor} />
-    
-    {/* Ears */}
-    <ellipse cx="56" cy="143" rx="7" ry="10" fill={skinColor} />
-    <ellipse cx="144" cy="143" rx="7" ry="10" fill={skinColor} />
-    <ellipse cx="56" cy="143" rx="4" ry="6" fill={AVATAR_CONFIG.skin.innerEar} opacity="0.5" />
-    <ellipse cx="144" cy="143" rx="4" ry="6" fill={AVATAR_CONFIG.skin.innerEar} opacity="0.5" />
-
-    {/* Eyebrows with animation */}
-    <path 
-      className="avatar-brow avatar-brow-left" 
-      d={expression === 'thinking' ? "M75 115 Q82 110 90 114" : "M75 118 Q82 113 90 117"} 
-      stroke={hairColor} 
-      strokeWidth="2.5" 
-      fill="none" 
-      strokeLinecap="round" 
-    />
-    <path 
-      className="avatar-brow avatar-brow-right" 
-      d={expression === 'thinking' ? "M110 114 Q118 110 125 115" : "M110 117 Q118 113 125 118"} 
-      stroke={hairColor} 
-      strokeWidth="2.5" 
-      fill="none" 
-      strokeLinecap="round" 
-    />
-
-    <Eyes 
-      isFemale={isFemale} 
-      eyeColor={eyeColor} 
-      isBlinking={isBlinking}
-      expression={expression}
-    />
-
-    {/* Nose */}
-    <ellipse cx="100" cy="142" rx="5" ry="7" fill="transparent" stroke={AVATAR_CONFIG.skin.nose} strokeWidth="1.2" opacity="0.6" />
-    <path d="M95 149 Q100 152 105 149" stroke={AVATAR_CONFIG.skin.nose} strokeWidth="1.5" fill="none" strokeLinecap="round" />
-
-    <Mouth expression={expression} />
-
-    {/* Cheeks blush with animation */}
-    <ellipse cx="69" cy="148" rx="10" ry="7" fill={AVATAR_CONFIG.skin.blush} opacity="0.25" className="avatar-blush" />
-    <ellipse cx="131" cy="148" rx="10" ry="7" fill={AVATAR_CONFIG.skin.blush} opacity="0.25" className="avatar-blush" />
-  </g>
-));
 
 Head.displayName = 'Head';
 
-// ==================== MAIN COMPONENTS ====================
-
-const AnimalAvatar = memo(({ avatar, isSpeaking, suiteColor, size = 'md', onClick }) => {
-  const personality = getAnimalPersonality(avatar);
-  const postureClass = getPostureClass(isSpeaking, avatar?.posture);
-  const [isHovered, setIsHovered] = useState(false);
-
-  const sizeClasses = {
-    sm: 'avatar-sm',
-    md: 'avatar-md',
-    lg: 'avatar-lg',
-    xl: 'avatar-xl'
-  };
-
+const Body = memo(({ outfitColor, style = 'casual', isActive }) => {
+  const outfitColors = getOutfitColors(style, outfitColor);
+  
   return (
-    <div 
-      className={`avatar-figure-wrapper ${postureClass} ${personality.class} ${sizeClasses[size]} ${isHovered ? 'avatar-hovered' : ''}`}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-      onClick={onClick}
-      role={onClick ? 'button' : 'figure'}
-      tabIndex={onClick ? 0 : -1}
-      aria-label={`${avatar?.name} avatar - ${avatar?.role}`}
-    >
-      <div className="animal-avatar">
-        <div className="animal-aura" style={{ background: `radial-gradient(circle, ${suiteColor}30 0%, transparent 70%)` }} />
-        
-        {/* Ears with animation */}
-        <div className="animal-ears">
-          <span className="animal-ear left"></span>
-          <span className="animal-ear right"></span>
-        </div>
-
-        {/* Face */}
-        <div className="animal-face">
-          <div className="animal-eye left">
-            <span className="pupil" />
-          </div>
-          <div className="animal-eye right">
-            <span className="pupil" />
-          </div>
-          <div className={`animal-mouth ${isSpeaking ? 'speaking' : ''}`} />
-        </div>
-
-        {/* Body */}
-        <div className="animal-emoji" aria-hidden="true">
-          {avatar?.avatar || '🐾'}
-        </div>
-        
-        <div className="animal-tail" />
-        
-        <div className="animal-nameplate" style={{ color: suiteColor }}>
-          {avatar?.name}
-        </div>
-        
-        <div className="animal-role-badge">
-          {avatar?.role}
-        </div>
-      </div>
-
-      {/* Speaking effect */}
-      {isSpeaking && (
-        <>
-          <div className="avatar-speak-ring" style={{ borderColor: suiteColor }} />
-          <div className="avatar-speak-wave" style={{ backgroundColor: suiteColor }} />
-        </>
-      )}
-    </div>
+    <g className="avatar-body">
+      {/* Torso */}
+      <rect x="70" y="160" width="60" height="80" rx="15" fill={outfitColors[0]} filter="url(#softShadow)" />
+      
+      {/* Shirt detail */}
+      <path d="M85 160 L100 175 L115 160" fill={outfitColors[1]} opacity="0.3" />
+      
+      {/* Collar */}
+      <path d="M90 165 L100 175 L110 165" fill="white" opacity="0.5" />
+      
+      {/* Arms */}
+      <g className={`left-arm ${isActive ? 'avatar-gesture' : ''}`}>
+        <rect x="45" y="165" width="25" height="60" rx="12" fill={outfitColors[0]} />
+        <circle cx="57" cy="230" r="10" fill={getSkinColor('default')} />
+      </g>
+      
+      <g className={`right-arm ${isActive ? 'avatar-gesture' : ''}`}>
+        <rect x="130" y="165" width="25" height="60" rx="12" fill={outfitColors[0]} />
+        <circle cx="142" cy="230" r="10" fill={getSkinColor('default')} />
+      </g>
+      
+      {/* Accessory pocket or design */}
+      <rect x="95" y="185" width="10" height="15" rx="3" fill={outfitColors[2]} opacity="0.5" />
+    </g>
   );
 });
 
-AnimalAvatar.displayName = 'AnimalAvatar';
+Body.displayName = 'Body';
 
-const HumanAvatar = memo(({ 
-  avatar, 
-  isSpeaking, 
-  suiteColor, 
-  size = 'md',
-  interactive = false,
-  onClick,
-  className = ''
-}) => {
-  const isFemale = avatar?.gender === 'female';
-  const skinColor = isFemale ? AVATAR_CONFIG.skin.female : AVATAR_CONFIG.skin.male;
-  const hairColor = getHairColor(avatar?.hairColor, avatar?.gender);
-  const eyeColor = getEyeColor(avatar?.eyeColor);
-  const suiteShade = isFemale ? '#be185d' : '#1e3a5f';
-  const [isHovered, setIsHovered] = useState(false);
-  const [expression, setExpression] = useState('neutral');
+const Accessories = memo(({ type = 'none', primaryColor }) => {
+  if (type === 'glasses') {
+    return (
+      <g className="avatar-accessories">
+        <rect x="70" y="100" width="25" height="10" rx="5" fill="#333" opacity="0.8" />
+        <rect x="105" y="100" width="25" height="10" rx="5" fill="#333" opacity="0.8" />
+        <path d="M95 105 L105 105" stroke="#333" strokeWidth="2" />
+      </g>
+    );
+  }
   
-  const { localIsSpeaking, localPosture } = useAvatarAnimations(
-    isSpeaking, 
-    avatar?.posture,
-    () => setExpression('neutral')
-  );
+  if (type === 'headphones') {
+    return (
+      <g className="avatar-accessories">
+        <circle cx="60" cy="100" r="15" fill="#333" opacity="0.8" />
+        <circle cx="140" cy="100" r="15" fill="#333" opacity="0.8" />
+        <path d="M75 95 L125 95" stroke="#333" strokeWidth="8" strokeLinecap="round" />
+      </g>
+    );
+  }
   
-  const isBlinking = useBlinkAnimation();
-
-  // Update expression based on posture
-  useEffect(() => {
-    if (localPosture === 'thinking') {
-      setExpression('thinking');
-    } else if (localPosture === 'speaking' || localIsSpeaking) {
-      setExpression('speaking');
-    } else if (localPosture === 'nodding') {
-      setExpression('smile');
-    } else {
-      setExpression('neutral');
-    }
-  }, [localPosture, localIsSpeaking]);
-
-  const postureClass = getPostureClass(localIsSpeaking, localPosture);
+  if (type === 'cap') {
+    return (
+      <g className="avatar-accessories">
+        <path d="M70 75 Q100 60 130 75 L130 85 Q100 70 70 85 Z" fill={primaryColor || '#E11D48'} />
+        <circle cx="100" cy="75" r="5" fill="white" />
+      </g>
+    );
+  }
   
-  const sizeClasses = {
-    sm: 'avatar-sm',
-    md: 'avatar-md',
-    lg: 'avatar-lg',
-    xl: 'avatar-xl'
-  };
-
-  const hairStyle = avatar?.hairStyle || 'modern';
-
-  return (
-    <div 
-      className={`avatar-figure-wrapper ${postureClass} ${sizeClasses[size]} ${isHovered ? 'avatar-hovered' : ''} ${className}`}
-      onMouseEnter={() => interactive && setIsHovered(true)}
-      onMouseLeave={() => interactive && setIsHovered(false)}
-      onClick={interactive ? onClick : undefined}
-      role={interactive ? 'button' : 'figure'}
-      tabIndex={interactive ? 0 : -1}
-      aria-label={`${avatar?.name} avatar - ${avatar?.role}`}
-    >
-      <svg
-        viewBox="0 0 200 350"
-        xmlns="http://www.w3.org/2000/svg"
-        className="avatar-svg"
-        aria-hidden="true"
-      >
-        <AvatarDefs suiteColor={suiteColor} hasGlow={localIsSpeaking} />
-        
-        {/* Shadow with animation */}
-        <ellipse cx="100" cy="340" rx="65" ry="12" fill="rgba(0,0,0,0.2)" className="avatar-shadow" />
-
-        <Body 
-          suiteShade={suiteShade} 
-          isFemale={isFemale} 
-          suiteColor={suiteColor}
-          hasTie={!isFemale && avatar?.hasTie !== false}
-        />
-        
-        <Arms 
-          suiteShade={suiteShade} 
-          skinColor={skinColor}
-          isPointing={localPosture === 'speaking' || localIsSpeaking}
-        />
-        
-        <Head 
-          isFemale={isFemale}
-          skinColor={skinColor}
-          hairColor={hairColor}
-          eyeColor={eyeColor}
-          isBlinking={isBlinking}
-          expression={expression}
-          hairStyle={hairStyle}
-        />
-      </svg>
-
-      {/* Name and role overlay for larger sizes */}
-      {size !== 'sm' && (
-        <div className="avatar-info-overlay">
-          <div className="avatar-name" style={{ color: suiteColor }}>
-            {avatar?.name}
-          </div>
-          <div className="avatar-role-tag">
-            {avatar?.role}
-          </div>
-        </div>
-      )}
-
-      {/* Speaking effects */}
-      {localIsSpeaking && (
-        <>
-          <div className="avatar-speak-ring" style={{ borderColor: suiteColor }} />
-          <div className="avatar-speak-wave" style={{ backgroundColor: suiteColor }} />
-        </>
-      )}
-
-      {/* Status indicator */}
-      {avatar?.status && (
-        <div className={`avatar-status-indicator status-${avatar.status}`} />
-      )}
-    </div>
-  );
+  return null;
 });
 
-HumanAvatar.displayName = 'HumanAvatar';
+Accessories.displayName = 'Accessories';
 
-// ==================== MAIN COMPONENT ====================
-
-const AvatarFigure = ({
+// ==================== MAIN AVATAR COMPONENT ====================
+const GameAvatar = memo(({ 
   avatar,
-  isSpeaking = false,
-  posture = 'idle',
-  onAnimationComplete,
+  state = 'idle',
+  isActive = false,
   size = 'md',
   interactive = false,
   onClick,
   className = '',
-  ariaLabel
+  priority = false,
+  showNameplate = true,
+  showStatus = true
 }) => {
-  const isAnimal = avatar?.species === 'animal';
-  const suiteColor = avatar?.color || '#4f9eff';
+  const avatarSeed = getAvatarSeed(avatar);
+  const skinColor = getSkinColor(avatar?.skinTone || 'default');
+  const hairColor = getHairColor(avatar?.hairColor || 'brown');
+  const eyeColor = getEyeColor(avatar?.eyeColor || 'brown');
+  const outfitColor = avatar?.outfitColor;
+  const style = avatar?.style || 'casual';
+  const accessory = avatar?.accessory || 'none';
+  
+  const { currentState, expression, transitionTo } = useAvatarState(state);
+  const isBlinking = useBlinkAnimation();
+  const idleMotion = useIdleAnimation(isActive && currentState === 'idle');
+  
+  const { isHovered, handlers } = useMemo(() => {
+    if (!interactive) return { isHovered: false, handlers: {} };
+    
+    return {
+      isHovered: false,
+      handlers: {
+        onMouseEnter: () => {},
+        onMouseLeave: () => {},
+        onFocus: () => {},
+        onBlur: () => {}
+      }
+    };
+  }, [interactive]);
 
-  // Merge posture with avatar
-  const avatarWithState = useMemo(
-    () => ({ ...avatar, posture }),
-    [avatar, posture]
-  );
+  // Sync with prop state
+  useEffect(() => {
+    if (state !== currentState) {
+      transitionTo(state, AVATAR_CONFIG.animation[state]);
+    }
+  }, [state, currentState, transitionTo]);
+
+  const sizeStyles = AVATAR_CONFIG.sizes[size];
+  const stateClass = `avatar-state-${currentState}`;
+  
+  const handleKeyDown = useCallback((e) => {
+    if (interactive && onClick && (e.key === 'Enter' || e.key === 'Space')) {
+      e.preventDefault();
+      onClick(e);
+    }
+  }, [interactive, onClick]);
+
+  // Dynamic transforms
+  const groupTransform = `
+    translate(${idleMotion.translateY * 0.5}px, ${idleMotion.translateY}px)
+    rotate(${idleMotion.rotate}deg)
+  `;
 
   return (
-    <>
-      {isAnimal ? (
-        <AnimalAvatar
-          avatar={avatarWithState}
-          isSpeaking={isSpeaking}
-          suiteColor={suiteColor}
-          size={size}
-          onClick={interactive ? onClick : undefined}
-        />
-      ) : (
-        <HumanAvatar
-          avatar={avatarWithState}
-          isSpeaking={isSpeaking}
-          suiteColor={suiteColor}
-          size={size}
-          interactive={interactive}
-          onClick={onClick}
-          className={className}
-        />
+    <div 
+      className={`
+        avatar-game-wrapper
+        ${stateClass}
+        avatar-size-${size}
+        ${isActive ? 'avatar-active' : ''}
+        ${isHovered ? 'avatar-hovered' : ''}
+        ${className}
+      `}
+      style={{
+        width: sizeStyles.width,
+        height: sizeStyles.height
+      }}
+      {...handlers}
+      onClick={interactive ? onClick : undefined}
+      onKeyDown={handleKeyDown}
+      role={interactive ? 'button' : 'figure'}
+      tabIndex={interactive ? 0 : -1}
+      aria-label={avatar?.name}
+    >
+      {/* Background glow when active */}
+      {isActive && (
+        <div className="avatar-glow" style={{ backgroundColor: outfitColor }} />
       )}
       
-      {/* Screen reader only description */}
-      {ariaLabel && (
-        <span className="sr-only">{ariaLabel}</span>
+      {/* Speaking visual effects */}
+      {currentState === 'speaking' && (
+        <>
+          <div className="avatar-speak-ring" style={{ borderColor: outfitColor || '#4f9eff' }} />
+          <div className="avatar-speak-wave" style={{ borderColor: outfitColor || '#4f9eff' }} />
+        </>
       )}
-    </>
+      
+      {/* Avatar SVG with transforms */}
+      <svg
+        viewBox="0 0 200 280"
+        xmlns="http://www.w3.org/2000/svg"
+        className="avatar-svg"
+        style={{ transform: groupTransform }}
+        aria-hidden="true"
+        preserveAspectRatio="xMidYMid meet"
+      >
+        <AvatarDefs primaryColor={outfitColor} hasGlow={isActive} />
+        
+        {/* Shadow */}
+        <ellipse cx="100" cy="260" rx="50" ry="15" fill="rgba(0,0,0,0.2)" />
+        
+        {/* Avatar layers */}
+        <g clipPath="url(#avatarClip)">
+          <Body 
+            outfitColor={outfitColor}
+            style={style}
+            isActive={currentState === 'gesturing' || currentState === 'speaking'}
+          />
+          
+          <Head 
+            skinColor={skinColor}
+            expression={expression}
+            isBlinking={isBlinking}
+            isActive={isActive}
+          />
+          
+          <Accessories type={accessory} primaryColor={outfitColor} />
+        </g>
+      </svg>
+
+      {/* Nameplate */}
+      {showNameplate && (
+        <div className="avatar-nameplate" style={{ borderColor: outfitColor }}>
+          <span className="avatar-name">{avatar?.name}</span>
+          {avatar?.role && (
+            <span className="avatar-role">{avatar.role}</span>
+          )}
+        </div>
+      )}
+
+      {/* Status indicator */}
+      {showStatus && (
+        <div className={`avatar-status ${isActive ? 'status-active' : 'status-idle'}`}>
+          <span className="status-dot" />
+          <span className="status-text">{isActive ? 'Online' : 'Away'}</span>
+        </div>
+      )}
+
+      {/* State indicator for accessibility */}
+      {currentState !== 'idle' && (
+        <div className="sr-only">Currently {currentState}</div>
+      )}
+    </div>
   );
+});
+
+GameAvatar.displayName = 'GameAvatar';
+
+// ==================== EXPORT COMPONENT ====================
+const AvatarFigure = ({ isSpeaking, posture, state, ...props }) => {
+  // Convert legacy props (isSpeaking, posture) to the new state prop
+  const avatarState = isSpeaking !== undefined 
+    ? (isSpeaking ? 'speaking' : (posture || 'idle'))
+    : (state || posture || 'idle');
+  
+  return <GameAvatar {...props} state={avatarState} />;
 };
 
-AvatarFigure.propTypes = AvatarPropTypes;
+AvatarFigure.propTypes = {
+  ...AvatarPropTypes,
+  isSpeaking: PropTypes.bool,
+  posture: PropTypes.oneOf(['idle', 'speaking', 'listening', 'thinking', 'nodding', 'gesturing'])
+};
 
 export default memo(AvatarFigure);

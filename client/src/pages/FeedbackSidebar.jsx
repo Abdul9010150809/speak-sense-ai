@@ -7,7 +7,7 @@ import './FeedbackSidebar.css';
  * Analyzes the latest user message via /api/interview/analyze
  * and shows grammar issues, improvement points, and suggested topics.
  */
-export default function FeedbackSidebar({ lastUserMessage, isOpen, onToggle, speechMetrics, analysisTrigger = 0 }) {
+export default function FeedbackSidebar({ lastUserMessage, currentQuestionText, isOpen, onToggle, speechMetrics, analysisTrigger = 0 }) {
     const [loading, setLoading] = useState(false);
     const [data, setData] = useState(null);
     const [error, setError] = useState('');
@@ -19,13 +19,17 @@ export default function FeedbackSidebar({ lastUserMessage, isOpen, onToggle, spe
         setLoading(true);
         setError('');
         try {
-            const res = await API.post('/interview/analyze', { message });
+            const res = await API.post('/interview/analyze', {
+                message,
+                question: currentQuestionText || ''
+            });
             if (!cancelledRef.current) {
                 setData({
                     grammarIssues: Array.isArray(res.data?.grammarIssues) ? res.data.grammarIssues : [],
                     improvements: Array.isArray(res.data?.improvements) ? res.data.improvements : [],
                     topics: Array.isArray(res.data?.topics) ? res.data.topics : [],
                     stats: res.data?.stats || null,
+                    verification: res.data?.verification || null,
                 });
             }
         } catch {
@@ -35,7 +39,7 @@ export default function FeedbackSidebar({ lastUserMessage, isOpen, onToggle, spe
         } finally {
             if (!cancelledRef.current) setLoading(false);
         }
-    }, []);
+    }, [currentQuestionText]);
 
     useEffect(() => {
         if (!lastUserMessage || lastUserMessage.trim().length < 5) return;
@@ -82,6 +86,27 @@ export default function FeedbackSidebar({ lastUserMessage, isOpen, onToggle, spe
                                 </div>
                             </div>
                             <p className="speech-coach-tip">{speechMetrics.tip || 'Keep a steady pace and pause intentionally.'}</p>
+                        </div>
+                    )}
+
+                    {data?.verification && (
+                        <div className="speech-metrics-card">
+                            <h4>✅ Answer Verification</h4>
+                            <div className="speech-metrics-grid">
+                                <div className="speech-metric-item">
+                                    <span>{data.verification.overallScore ?? 0}</span>
+                                    <small>Overall</small>
+                                </div>
+                                <div className="speech-metric-item">
+                                    <span>{data.verification.relevanceScore ?? 0}</span>
+                                    <small>Relevance</small>
+                                </div>
+                                <div className="speech-metric-item">
+                                    <span>{data.verification.grammarScore ?? 0}</span>
+                                    <small>Grammar</small>
+                                </div>
+                            </div>
+                            <p className="speech-coach-tip">{data.verification.verdict || 'Answer verification completed.'}</p>
                         </div>
                     )}
 

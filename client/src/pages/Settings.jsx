@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
+import { getStoredUser, saveStoredUser } from "../utils/authStorage";
 import "./Settings.css";
 
 const defaultProfile = {
@@ -19,6 +20,8 @@ const defaultProfile = {
   education: "M.S. Computer Science",
 };
 
+const AVATAR_PACK_STORAGE_KEY = "avatarPackStyle";
+
 export default function Settings() {
   const [activeTab, setActiveTab] = useState("profile");
   const [isLoading, setIsLoading] = useState(false);
@@ -27,7 +30,7 @@ export default function Settings() {
   // User Profile State
   const [profile, setProfile] = useState(() => {
     try {
-      const storedUser = JSON.parse(localStorage.getItem("user") || "null");
+      const storedUser = getStoredUser();
       if (!storedUser) return defaultProfile;
 
       return {
@@ -55,15 +58,28 @@ export default function Settings() {
   });
 
   // Appearance Settings State
-  const [appearance, setAppearance] = useState({
-    theme: "dark",
-    fontSize: "medium",
-    compactMode: false,
-    showAvatars: true,
-    animations: true,
-    codeEditorTheme: "monokai",
-    fontFamily: "inter",
-    borderRadius: "medium",
+  const [appearance, setAppearance] = useState(() => {
+    let storedAvatarPack = "illustrated";
+    try {
+      const rawAvatarPack = localStorage.getItem(AVATAR_PACK_STORAGE_KEY);
+      if (["illustrated", "emoji"].includes(rawAvatarPack)) {
+        storedAvatarPack = rawAvatarPack;
+      }
+    } catch {
+      // ignore localStorage read failures
+    }
+
+    return {
+      theme: "dark",
+      fontSize: "medium",
+      compactMode: false,
+      showAvatars: true,
+      animations: true,
+      codeEditorTheme: "monokai",
+      fontFamily: "inter",
+      borderRadius: "medium",
+      avatarPackStyle: storedAvatarPack,
+    };
   });
 
   // Privacy Settings State
@@ -125,6 +141,14 @@ export default function Settings() {
     setPasswordStrength(strength);
   }, [password.new]);
 
+  useEffect(() => {
+    try {
+      localStorage.setItem(AVATAR_PACK_STORAGE_KEY, appearance.avatarPackStyle || "illustrated");
+    } catch {
+      // ignore localStorage write failures
+    }
+  }, [appearance.avatarPackStyle]);
+
   // Simulate save
   const handleSave = () => {
     setIsLoading(true);
@@ -132,16 +156,13 @@ export default function Settings() {
     
     setTimeout(() => {
       try {
-        const existingUser = JSON.parse(localStorage.getItem("user") || "null") || {};
-        localStorage.setItem(
-          "user",
-          JSON.stringify({
-            ...existingUser,
-            name: profile.fullName,
-            email: profile.email,
-            experience: profile.experience,
-          })
-        );
+        const existingUser = getStoredUser() || {};
+        saveStoredUser({
+          ...existingUser,
+          name: profile.fullName,
+          email: profile.email,
+          experience: profile.experience,
+        });
       } catch {
         // ignore localStorage failures
       }
@@ -752,6 +773,33 @@ export default function Settings() {
                       />
                       <span className="slider"></span>
                     </label>
+                  </div>
+                </div>
+
+                <div className="avatar-pack-section">
+                  <h3>Avatar Pack</h3>
+                  <p>Choose how interview avatars appear across selection cards and chat.</p>
+
+                  <div className="avatar-pack-options" role="radiogroup" aria-label="Avatar pack style">
+                    <button
+                      type="button"
+                      className={`avatar-pack-option ${appearance.avatarPackStyle === "illustrated" ? "active" : ""}`}
+                      onClick={() => setAppearance({ ...appearance, avatarPackStyle: "illustrated" })}
+                      aria-pressed={appearance.avatarPackStyle === "illustrated"}
+                    >
+                      <span className="avatar-pack-icon" aria-hidden="true">🎮</span>
+                      <span className="avatar-pack-name">Game Avatar</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      className={`avatar-pack-option ${appearance.avatarPackStyle === "emoji" ? "active" : ""}`}
+                      onClick={() => setAppearance({ ...appearance, avatarPackStyle: "emoji" })}
+                      aria-pressed={appearance.avatarPackStyle === "emoji"}
+                    >
+                      <span className="avatar-pack-icon" aria-hidden="true">😀</span>
+                      <span className="avatar-pack-name">Emoji</span>
+                    </button>
                   </div>
                 </div>
               </div>

@@ -2,11 +2,18 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import './auth.css';
 import API from '../services/api';
+import { saveAuthSession } from '../utils/authStorage';
 
 const industries = [
-  'Software Development', 'Information Technology', 'Data Science / ML',
-  'Finance & Banking', 'Healthcare', 'Education',
-  'Marketing & Sales', 'Consulting', 'Manufacturing', 'Other'
+  'Software Development',
+  'Information Technology',
+  'Data Science / ML',
+  'Product Management',
+  'UI/UX Design',
+  'DevOps / Cloud',
+  'Cybersecurity',
+  'Quality Assurance',
+  'Other'
 ];
 
 function getPasswordStrength(pw) {
@@ -68,14 +75,17 @@ export default function Signup() {
     if (!validate()) return;
     setIsLoading(true);
     try {
-      await API.post('/auth/register', {
+      const res = await API.post('/auth/register', {
         name: `${form.firstName} ${form.lastName}`,
         email: form.email.trim().toLowerCase(),
         password: form.password,
         industry: form.industry
-      }).then((res) => {
-        if (res.data?.token) localStorage.setItem('token', res.data.token);
-        if (res.data?.user) localStorage.setItem('user', JSON.stringify(res.data.user));
+      });
+      saveAuthSession({
+        token: res.data?.token,
+        user: res.data?.user,
+        rememberMe: true,
+        email: form.email.trim().toLowerCase(),
       });
       navigate('/dashboard');
     } catch (err) {
@@ -90,8 +100,12 @@ export default function Signup() {
     setApiError('');
     try {
       const res = await API.post('/auth/social', { provider, mode: 'demo' });
-      if (res.data.token) localStorage.setItem('token', res.data.token);
-      if (res.data.user) localStorage.setItem('user', JSON.stringify(res.data.user));
+      saveAuthSession({
+        token: res.data?.token,
+        user: res.data?.user,
+        rememberMe: true,
+        email: res.data?.user?.email || form.email,
+      });
       navigate('/dashboard');
     } catch (err) {
       setApiError(err.response?.data?.message || `${provider} sign up failed. Please try again.`);
@@ -105,8 +119,12 @@ export default function Signup() {
     setApiError('');
     try {
       const res = await API.post('/auth/demo');
-      if (res.data.token) localStorage.setItem('token', res.data.token);
-      if (res.data.user) localStorage.setItem('user', JSON.stringify(res.data.user));
+      saveAuthSession({
+        token: res.data?.token,
+        user: res.data?.user,
+        rememberMe: true,
+        email: res.data?.user?.email || form.email,
+      });
       navigate('/dashboard');
     } catch (err) {
       setApiError(err.response?.data?.message || 'Demo signup failed. Please try again.');

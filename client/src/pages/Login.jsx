@@ -2,10 +2,19 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import './auth.css';
 import API from '../services/api';
+import {
+  getRememberMePreference,
+  getRememberedEmail,
+  saveAuthSession,
+} from '../utils/authStorage';
 
 const Login = () => {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({ email: '', password: '', rememberMe: false });
+  const [formData, setFormData] = useState(() => ({
+    email: getRememberedEmail(),
+    password: '',
+    rememberMe: getRememberMePreference(),
+  }));
   const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -34,8 +43,12 @@ const Login = () => {
     setIsLoading(true);
     try {
       const res = await API.post('/auth/login', { email: formData.email, password: formData.password });
-      if (res.data.token) localStorage.setItem('token', res.data.token);
-      if (res.data.user) localStorage.setItem('user', JSON.stringify(res.data.user));
+      saveAuthSession({
+        token: res.data.token,
+        user: res.data.user,
+        rememberMe: formData.rememberMe,
+        email: formData.email,
+      });
       navigate('/dashboard');
     } catch (err) {
       setApiError(err.response?.data?.message || 'Invalid credentials. Please try again.');
@@ -49,8 +62,13 @@ const Login = () => {
     setApiError('');
     try {
       const res = await API.post('/auth/social', { provider, mode: 'demo' });
-      if (res.data.token) localStorage.setItem('token', res.data.token);
-      if (res.data.user) localStorage.setItem('user', JSON.stringify(res.data.user));
+      const socialEmail = res.data?.user?.email || formData.email;
+      saveAuthSession({
+        token: res.data.token,
+        user: res.data.user,
+        rememberMe: formData.rememberMe,
+        email: socialEmail,
+      });
       navigate('/dashboard');
     } catch (err) {
       setApiError(err.response?.data?.message || `${provider} sign in failed. Please try again.`);
@@ -64,8 +82,13 @@ const Login = () => {
     setApiError('');
     try {
       const res = await API.post('/auth/demo');
-      if (res.data.token) localStorage.setItem('token', res.data.token);
-      if (res.data.user) localStorage.setItem('user', JSON.stringify(res.data.user));
+      const demoEmail = res.data?.user?.email || formData.email;
+      saveAuthSession({
+        token: res.data.token,
+        user: res.data.user,
+        rememberMe: formData.rememberMe,
+        email: demoEmail,
+      });
       navigate('/dashboard');
     } catch (err) {
       setApiError(err.response?.data?.message || 'Demo sign in failed. Please try again.');

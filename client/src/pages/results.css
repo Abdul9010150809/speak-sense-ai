@@ -176,6 +176,27 @@ body {
   box-shadow: 0 10px 30px -5px rgba(0, 100, 200, 0.4);
 }
 
+.db-save-status {
+  margin-bottom: 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  border: 1px solid transparent;
+  font-size: 0.92rem;
+  font-weight: 500;
+}
+
+.db-save-status.saved {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: rgba(16, 185, 129, 0.45);
+  color: #bbf7d0;
+}
+
+.db-save-status.failed {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: rgba(245, 158, 11, 0.4);
+  color: #fde68a;
+}
+
 /* Navigation Tabs */
 .results-tabs {
   display: flex;
@@ -971,6 +992,40 @@ body {
   font-size: 1rem;
 }
 
+.question-meta {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.question-correctness-badge {
+  width: fit-content;
+  font-size: 0.76rem;
+  font-weight: 600;
+  border-radius: 999px;
+  padding: 0.24rem 0.58rem;
+  letter-spacing: 0.02em;
+  border: 1px solid rgba(153, 170, 204, 0.35);
+  color: #e5e7eb;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.question-correctness-badge.correct {
+  border-color: rgba(72, 187, 120, 0.45);
+  background: rgba(72, 187, 120, 0.15);
+}
+
+.question-correctness-badge.partial {
+  border-color: rgba(246, 173, 85, 0.45);
+  background: rgba(246, 173, 85, 0.14);
+}
+
+.question-correctness-badge.incorrect {
+  border-color: rgba(245, 101, 101, 0.45);
+  background: rgba(245, 101, 101, 0.14);
+}
+
 .question-score {
   width: 50px;
   height: 50px;
@@ -1002,6 +1057,36 @@ body {
   background: rgba(255, 255, 255, 0.03);
   border-radius: 10px;
   font-style: italic;
+  font-size: 0.9rem;
+}
+
+.question-answer {
+  margin-bottom: 1rem;
+  padding: 0.85rem;
+  border-radius: 10px;
+  border: 1px solid rgba(125, 211, 252, 0.25);
+  background: rgba(15, 23, 42, 0.45);
+}
+
+.question-answer h4 {
+  color: #dbeafe;
+  font-size: 0.88rem;
+  margin-bottom: 0.45rem;
+}
+
+.question-answer p {
+  color: #d1e4ff;
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
+.question-empty-state {
+  margin-bottom: 1rem;
+  border: 1px solid rgba(125, 211, 252, 0.25);
+  background: rgba(15, 23, 42, 0.5);
+  border-radius: 12px;
+  padding: 0.85rem 0.95rem;
+  color: #cbdcf5;
   font-size: 0.9rem;
 }
 

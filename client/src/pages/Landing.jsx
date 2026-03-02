@@ -3,13 +3,27 @@ import { useState, useEffect, useRef } from "react";
 import "./landing.css";
 
 export default function Landing() {
+  const getViewport = () => {
+    if (typeof window === "undefined") {
+      return { width: 1280, height: 720 };
+    }
+    return {
+      width: Math.max(window.innerWidth || 0, 320),
+      height: Math.max(window.innerHeight || 0, 480),
+    };
+  };
+
   const [isVisible, setIsVisible] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeFeature, setActiveFeature] = useState(0);
   const [activeTestimonial, setActiveTestimonial] = useState(0);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [isPlaying, setIsPlaying] = useState(false);
+  const [demoStatus, setDemoStatus] = useState("");
+  const [viewport, setViewport] = useState(() => getViewport());
   const canvasRef = useRef(null);
-  const videoRef = useRef(null);
+  const demoUtteranceRef = useRef(null);
+  const demoPlaybackIdRef = useRef(0);
 
   const getCompanyBadge = (company) => {
     if (!company) return "•";
@@ -73,6 +87,36 @@ export default function Landing() {
     }, 4000);
     
     return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !("speechSynthesis" in window) || !window.speechSynthesis) return undefined;
+
+    const synth = window.speechSynthesis;
+
+    const preloadVoices = () => {
+      synth.getVoices();
+    };
+
+    preloadVoices();
+    synth.addEventListener?.("voiceschanged", preloadVoices);
+
+    return () => {
+      synth.removeEventListener?.("voiceschanged", preloadVoices);
+      synth.cancel?.();
+      demoUtteranceRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+
+    const handleResize = () => {
+      setViewport(getViewport());
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   // Neural network animation
@@ -214,14 +258,74 @@ export default function Landing() {
   ];
 
   const handleWatchDemo = () => {
-    setIsPlaying(!isPlaying);
-    if (videoRef.current) {
-      if (!isPlaying) {
-        videoRef.current.play();
-      } else {
-        videoRef.current.pause();
-      }
+    if (typeof window === "undefined" || !("speechSynthesis" in window) || typeof SpeechSynthesisUtterance === "undefined") {
+      setDemoStatus("Voice preview is not supported in this browser.");
+      setIsPlaying(false);
+      return;
     }
+
+    if (isPlaying) {
+      demoPlaybackIdRef.current += 1;
+      window.speechSynthesis.cancel();
+      setIsPlaying(false);
+      setDemoStatus("AI demo paused.");
+      return;
+    }
+
+    setDemoStatus("");
+
+    const script = `Hi, I am Nova, your AI interview coach. I can run technical and behavioral interview practice, then give instant feedback on clarity, confidence, and relevance. Ready to start your mock interview?`;
+    const voices = window.speechSynthesis.getVoices();
+
+    const selectedVoice =
+      voices.find((voice) => /en/i.test(voice.lang) && /female|zira|aria|samantha|google uk english female/i.test(voice.name))
+      || voices.find((voice) => /en/i.test(voice.lang))
+      || voices[0]
+      || null;
+
+    const playbackId = demoPlaybackIdRef.current + 1;
+    demoPlaybackIdRef.current = playbackId;
+
+    const speakWithFallback = (attempt = 0) => {
+      const utterance = new SpeechSynthesisUtterance(script);
+      const shouldUsePreferredVoice = attempt === 0 && selectedVoice;
+
+      if (shouldUsePreferredVoice) {
+        utterance.voice = selectedVoice;
+        utterance.lang = selectedVoice.lang || "en-US";
+      } else {
+        utterance.lang = "en-US";
+      }
+
+      utterance.rate = 0.98;
+      utterance.pitch = 1.05;
+      utterance.volume = 1;
+
+      utterance.onend = () => {
+        if (demoPlaybackIdRef.current !== playbackId) return;
+        setIsPlaying(false);
+        setDemoStatus("AI demo finished. Tap again to replay.");
+        demoUtteranceRef.current = null;
+      };
+
+      utterance.onerror = () => {
+        if (demoPlaybackIdRef.current !== playbackId) return;
+        if (attempt === 0) {
+          speakWithFallback(1);
+          return;
+        }
+        setIsPlaying(false);
+        setDemoStatus("Couldn't play AI voice preview. Please try Chrome or Edge.");
+        demoUtteranceRef.current = null;
+      };
+
+      demoUtteranceRef.current = utterance;
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(utterance);
+      setIsPlaying(true);
+    };
+
+    speakWithFallback(0);
   };
 
   return (
@@ -230,20 +334,33 @@ export default function Landing() {
       <canvas
         ref={canvasRef}
         className="neural-bg"
-        width={window.innerWidth}
-        height={window.innerHeight}
+        width={viewport.width}
+        height={viewport.height}
       />
       <header className="landing-topbar">
         <Link to="/" className="topbar-brand">
           <span className="topbar-logo">🎙️</span>
           <span>SpeakSense AI</span>
         </Link>
-        <nav className="topbar-links">
-          <a href="#features">Features</a>
-          <a href="#testimonials">Stories</a>
-          <a href="#cta">Get Started</a>
+        
+        <button 
+          className="mobile-menu-toggle" 
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          aria-label="Toggle navigation menu"
+          aria-expanded={isMobileMenuOpen}
+        >
+          <span className="hamburger-icon">
+            {isMobileMenuOpen ? '✕' : '☰'}
+          </span>
+        </button>
+        
+        <nav className={`topbar-links ${isMobileMenuOpen ? 'open' : ''}`}>
+          <a href="#features" onClick={() => setIsMobileMenuOpen(false)}>Features</a>
+          <a href="#testimonials" onClick={() => setIsMobileMenuOpen(false)}>Stories</a>
+          <a href="#cta" onClick={() => setIsMobileMenuOpen(false)}>Get Started</a>
         </nav>
-        <div className="topbar-actions">
+        
+        <div className={`topbar-actions ${isMobileMenuOpen ? 'open' : ''}`}>
           <Link to="/login" className="topbar-btn ghost">Sign In</Link>
           <Link to="/signup" className="topbar-btn solid">Try Free</Link>
         </div>
@@ -294,10 +411,13 @@ export default function Landing() {
           </div>
 
           {/* AI Voice Demo Button */}
+          <div className="ai-demo-wrap">
           <div className="ai-demo">
             <button 
+              type="button"
               className={`demo-btn ${isPlaying ? 'playing' : ''}`}
               onClick={handleWatchDemo}
+              aria-pressed={isPlaying}
             >
               <span className="demo-icon">{isPlaying ? '⏸️' : '▶️'}</span>
               <span className="demo-text">
@@ -307,6 +427,12 @@ export default function Landing() {
             <div className="waveform">
               <span></span><span></span><span></span><span></span><span></span>
             </div>
+          </div>
+          {demoStatus && (
+            <p className="demo-status" role="status" aria-live="polite">
+              {demoStatus}
+            </p>
+          )}
           </div>
           
           <div className="cta-buttons">
@@ -618,10 +744,10 @@ export default function Landing() {
             <h3>✨ Speak Sense AI</h3>
             <p>Your intelligent interview preparation platform powered by advanced artificial intelligence.</p>
             <div className="social-links">
-              <a href="#" className="social-link">𝕏</a>
-              <a href="#" className="social-link">💼</a>
-              <a href="#" className="social-link">📱</a>
-              <a href="#" className="social-link">💬</a>
+              <button type="button" className="social-link" aria-label="Social link X">𝕏</button>
+              <button type="button" className="social-link" aria-label="Social link LinkedIn">💼</button>
+              <button type="button" className="social-link" aria-label="Social link Mobile">📱</button>
+              <button type="button" className="social-link" aria-label="Social link Chat">💬</button>
             </div>
           </div>
           

@@ -1,5 +1,6 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 import { Link } from "react-router-dom";
+import API from "../services/api";
 import "./history.css";
 
 // Mock data - In production, this would come from an API
@@ -393,8 +394,26 @@ export default function History() {
     month: "all"
   });
 
-  // In production, this would be fetched from an API
-  const [interviews] = useState(MOCK_INTERVIEW_HISTORY);
+  const [interviews, setInterviews] = useState(MOCK_INTERVIEW_HISTORY);
+
+  useEffect(() => {
+    let active = true;
+
+    API.get("/interview/history")
+      .then((res) => {
+        const items = Array.isArray(res.data?.items) ? res.data.items : [];
+        if (active && items.length > 0) {
+          setInterviews(items);
+        }
+      })
+      .catch(() => {
+        // keep mock fallback when history API is unavailable
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const handleFilterChange = useCallback((filterType, value) => {
     setFilters(prev => ({ ...prev, [filterType]: value }));

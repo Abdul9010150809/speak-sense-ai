@@ -1,4 +1,5 @@
 import axios from "axios";
+import { clearAuthSession, getAuthToken } from "../utils/authStorage";
 
 const normalizeApiBase = (rawBaseUrl) => {
   if (!rawBaseUrl) return "/api";
@@ -25,9 +26,16 @@ const API = axios.create({
   }
 });
 
+let lastSessionExpiredDispatchAt = 0;
+
+const isAuthEndpointRequest = (url = "") => {
+  if (!url) return false;
+  return /\/auth\/(login|register|social|demo)\b/i.test(url);
+};
+
 // Request interceptor
 API.interceptors.request.use((req) => {
-  const token = localStorage.getItem("token");
+  const token = getAuthToken();
   if (token) {
     req.headers.Authorization = `Bearer ${token}`;
   }
@@ -42,8 +50,25 @@ API.interceptors.response.use(
   (error) => {
     // Handle 401 unauthorized
     if (error.response?.status === 401) {
-      localStorage.removeItem("token");
-      window.location.href = "/login";
+      const requestUrl = error.config?.url || "";
+
+      if (isAuthEndpointRequest(requestUrl)) {
+        return Promise.reject(error);
+      }
+
+      clearAuthSession();
+
+      if (typeof window !== "undefined") {
+        const now = Date.now();
+        const currentPath = window.location?.pathname || "";
+        const isAuthPage = /^\/(login|signup|register)$/.test(currentPath);
+        const shouldDispatch = !isAuthPage && now - lastSessionExpiredDispatchAt > 1500;
+
+        if (shouldDispatch) {
+          lastSessionExpiredDispatchAt = now;
+          window.dispatchEvent(new CustomEvent("auth:session-expired"));
+        }
+      }
     }
     return Promise.reject(error);
   }

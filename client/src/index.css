@@ -11,6 +11,52 @@
 body {
   background: #05070f;
   color: #e2e8f0;
+  line-height: 1.5;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.interview-page,
+.settings-page,
+.results-page,
+.planning-page,
+.history-page,
+.courses-page,
+.practice-page {
+  padding: clamp(0.85rem, 1.8vw, 1.5rem) !important;
+}
+
+.interview-container,
+.settings-container,
+.results-container,
+.planning-container,
+.history-container,
+.courses-container,
+.practice-container,
+.dashboard-container,
+.auth-wrapper,
+.auth-card {
+  gap: clamp(0.8rem, 1.6vw, 1.4rem);
+}
+
+.settings-section h2,
+.results-header,
+.planning-header,
+.history-header,
+.courses-header,
+.practice-header,
+.interview-header {
+  margin-bottom: clamp(0.8rem, 1.8vw, 1.4rem) !important;
+}
+
+.form-grid,
+.settings-grid,
+.interview-config-panel,
+.avatars-grid,
+.results-grid {
+  gap: clamp(0.75rem, 1.5vw, 1.1rem) !important;
 }
 
 button {

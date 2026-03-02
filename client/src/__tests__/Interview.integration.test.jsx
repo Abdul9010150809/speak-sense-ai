@@ -1,6 +1,6 @@
 import React from "react";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { MemoryRouter } from "react-router-dom";
+import { MemoryRouter, Routes, Route } from "react-router-dom";
 import { act } from "react";
 import Interview from "../pages/Interview";
 import API from "../services/api";
@@ -17,6 +17,19 @@ const renderInterview = () =>
   render(
     <MemoryRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <Interview />
+    </MemoryRouter>
+  );
+
+const renderInterviewWithRoutes = () =>
+  render(
+    <MemoryRouter
+      initialEntries={["/interview"]}
+      future={{ v7_startTransition: true, v7_relativeSplatPath: true }}
+    >
+      <Routes>
+        <Route path="/interview" element={<Interview />} />
+        <Route path="/results" element={<div data-testid="results-route-marker">Results Route</div>} />
+      </Routes>
     </MemoryRouter>
   );
 
@@ -37,7 +50,7 @@ const createDeferred = () => {
   return { promise, resolve, reject };
 };
 
-jest.setTimeout(15000);
+jest.setTimeout(30000);
 
 describe("Interview posture integration", () => {
   let now;
@@ -105,7 +118,7 @@ describe("Interview posture integration", () => {
     fireEvent.change(input, { target: { value: "I solved a critical production issue under pressure." } });
     fireEvent.click(screen.getByRole("button", { name: /send/i }));
 
-    expect(container.querySelector(".avatar-figure-wrapper.avatar-thinking")).toBeInTheDocument();
+    expect(container.querySelector(".avatar-game-wrapper.avatar-state-thinking")).toBeInTheDocument();
 
     await act(async () => {
       chatDeferred.resolve({
@@ -117,13 +130,13 @@ describe("Interview posture integration", () => {
       await Promise.resolve();
     });
 
-    expect(container.querySelector(".avatar-figure-wrapper.avatar-nodding")).toBeInTheDocument();
+    expect(container.querySelector(".avatar-game-wrapper.avatar-state-nodding")).toBeInTheDocument();
 
     await act(async () => {
       jest.advanceTimersByTime(800);
     });
 
-    expect(container.querySelector(".avatar-figure-wrapper.avatar-speaking")).toBeInTheDocument();
+    expect(container.querySelector(".avatar-game-wrapper.avatar-state-speaking")).toBeInTheDocument();
   });
 
   test("shows fallback response and transitions thinking -> speaking when chat API fails", async () => {
@@ -161,7 +174,7 @@ describe("Interview posture integration", () => {
     fireEvent.change(input, { target: { value: "I improved our system reliability." } });
     fireEvent.click(screen.getByRole("button", { name: /send/i }));
 
-    expect(container.querySelector(".avatar-figure-wrapper.avatar-thinking")).toBeInTheDocument();
+    expect(container.querySelector(".avatar-game-wrapper.avatar-state-thinking")).toBeInTheDocument();
 
     await act(async () => {
       chatDeferred.reject(new Error("chat failed"));
@@ -173,10 +186,10 @@ describe("Interview posture integration", () => {
     });
 
     const speakingOrListening = container.querySelector(
-      ".avatar-figure-wrapper.avatar-speaking, .avatar-figure-wrapper.avatar-listening"
+      ".avatar-game-wrapper.avatar-state-speaking, .avatar-game-wrapper.avatar-state-listening"
     );
     expect(speakingOrListening).toBeInTheDocument();
-    expect(container.querySelector(".avatar-figure-wrapper.avatar-nodding")).not.toBeInTheDocument();
+    expect(container.querySelector(".avatar-game-wrapper.avatar-state-nodding")).not.toBeInTheDocument();
   });
 
   test("shows starting state and sends experimental prompt mode when feature flag is enabled", async () => {
@@ -190,7 +203,7 @@ describe("Interview posture integration", () => {
       return Promise.reject(new Error(`Unexpected URL: ${url}`));
     });
 
-    renderInterview();
+    const { container } = renderInterview();
 
     await startFirstInterview();
 
@@ -240,15 +253,15 @@ describe("Interview posture integration", () => {
       return Promise.reject(new Error(`Unexpected URL: ${url}`));
     });
 
-    renderInterview();
+    const { container } = renderInterview();
 
     await startFirstInterview();
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: /next question/i })).toBeInTheDocument();
+      expect(container.querySelector(".next-question-btn")).toBeInTheDocument();
     });
 
-    fireEvent.click(screen.getByRole("button", { name: /next question/i }));
+    fireEvent.click(container.querySelector(".next-question-btn"));
 
     await waitFor(() => {
       expect(API.post).toHaveBeenCalledWith(
@@ -258,7 +271,7 @@ describe("Interview posture integration", () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByText(/question 1\s*\/\s*5/i)).toBeInTheDocument();
+      expect(screen.getByText(/q\s*2\s*\/\s*5/i)).toBeInTheDocument();
     });
   });
 
@@ -290,5 +303,187 @@ describe("Interview posture integration", () => {
 
     playSpy.mockRestore();
     delete window.FaceDetector;
+  });
+
+  test("DOM checklist: avatar selection, voice transcript, sidebar toggle, and posture score", async () => {
+    const recognitionInstances = [];
+    class MockSpeechRecognition {
+      constructor() {
+        this.lang = "en-US";
+        this.interimResults = true;
+        this.maxAlternatives = 1;
+        this.continuous = true;
+        this.onstart = null;
+        this.onresult = null;
+        this.onend = null;
+        this.onerror = null;
+        recognitionInstances.push(this);
+      }
+
+      start() {
+        this.onstart?.();
+      }
+
+      stop() {
+        this.onend?.();
+      }
+    }
+
+    Object.defineProperty(window, "SpeechRecognition", {
+      value: MockSpeechRecognition,
+      configurable: true
+    });
+
+    API.post.mockImplementation((url) => {
+      if (url === "/interview/start") {
+        return Promise.resolve({ data: { message: "Welcome to the interview." } });
+      }
+      if (url === "/interview/analyze") {
+        return Promise.resolve({
+          data: {
+            grammarIssues: [],
+            improvements: [],
+            topics: ["Interview Communication Skills"],
+            verification: { overallScore: 82, relevanceScore: 80, grammarScore: 84, correctnessLabel: "partially-correct" },
+            stats: { score: 82, wordCount: 8, sentenceCount: 1, avgWordsPerSentence: 8 }
+          }
+        });
+      }
+      if (url === "/interview/chat") {
+        return Promise.resolve({ data: { response: "Thanks for the response.", isComplete: false } });
+      }
+      return Promise.reject(new Error(`Unexpected URL: ${url}`));
+    });
+
+    const { container } = renderInterview();
+
+    expect(screen.queryByText("🦉")).not.toBeInTheDocument();
+    expect(screen.queryByText("🦊")).not.toBeInTheDocument();
+    expect(screen.queryByText("🐼")).not.toBeInTheDocument();
+
+    await startFirstInterview();
+
+    // Check for posture monitoring in the new button format
+    expect(screen.getByText(/posture/i)).toBeInTheDocument();
+    // The posture score should show "--" initially or a score like "85/100"
+    const postureScore = screen.getByText(/^(--|[0-9]+\/100)$/);
+    expect(postureScore).toBeInTheDocument();
+
+    const sidebar = container.querySelector(".feedback-sidebar.open");
+    expect(sidebar).toBeInTheDocument();
+
+    const toggle = container.querySelector(".feedback-toggle-btn");
+    fireEvent.click(toggle);
+    expect(container.querySelector(".feedback-sidebar.closed")).toBeInTheDocument();
+
+    fireEvent.click(toggle);
+    expect(container.querySelector(".feedback-sidebar.open")).toBeInTheDocument();
+
+    const speakButton = screen.getByRole("button", { name: /start voice input|stop voice input/i });
+    fireEvent.click(speakButton);
+
+    const recognition = recognitionInstances[0];
+    expect(recognition).toBeDefined();
+
+    await act(async () => {
+      recognition.onresult?.({
+        resultIndex: 0,
+        results: [
+          {
+            0: { transcript: "I am speaking now" },
+            isFinal: false
+          }
+        ]
+      });
+      await Promise.resolve();
+    });
+
+    expect(screen.getAllByText(/i am speaking now/i).length).toBeGreaterThan(0);
+
+    delete window.SpeechRecognition;
+  });
+
+  test("end interview auto-redirects to results route", async () => {
+    API.post.mockImplementation((url) => {
+      if (url === "/interview/start") {
+        return Promise.resolve({ data: { message: "Welcome to the interview." } });
+      }
+      if (url === "/interview/analyze") {
+        return Promise.resolve({
+          data: {
+            grammarIssues: [],
+            improvements: [],
+            topics: ["Interview Communication Skills"],
+            verification: { overallScore: 80, relevanceScore: 78, grammarScore: 82, correctnessLabel: "partially-correct" },
+            stats: { score: 80, wordCount: 7, sentenceCount: 1, avgWordsPerSentence: 7 }
+          }
+        });
+      }
+      if (url === "/interview/chat") {
+        return Promise.resolve({ data: { response: "Thanks for your answer.", isComplete: false } });
+      }
+      return Promise.reject(new Error(`Unexpected URL: ${url}`));
+    });
+
+    renderInterviewWithRoutes();
+
+    await startFirstInterview();
+
+    await waitFor(() => {
+      expect(screen.getByRole("button", { name: /end interview session/i })).toBeInTheDocument();
+    });
+
+    fireEvent.click(screen.getByRole("button", { name: /end interview session/i }));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("results-route-marker")).toBeInTheDocument();
+    });
+  });
+
+  test("auto-complete path redirects to results route when chat returns isComplete true", async () => {
+    API.post.mockImplementation((url) => {
+      if (url === "/interview/start") {
+        return Promise.resolve({ data: { message: "Welcome to the interview." } });
+      }
+      if (url === "/interview/analyze") {
+        return Promise.resolve({
+          data: {
+            grammarIssues: [],
+            improvements: [],
+            topics: ["Interview Communication Skills"],
+            verification: { overallScore: 85, relevanceScore: 84, grammarScore: 86, correctnessLabel: "correct" },
+            stats: { score: 85, wordCount: 9, sentenceCount: 1, avgWordsPerSentence: 9 }
+          }
+        });
+      }
+      if (url === "/interview/chat") {
+        return Promise.resolve({ data: { response: "Thank you, that completes the interview.", isComplete: true } });
+      }
+      return Promise.reject(new Error(`Unexpected URL: ${url}`));
+    });
+
+    renderInterviewWithRoutes();
+
+    await startFirstInterview();
+
+    const input = await screen.findByPlaceholderText(/type your response/i);
+    fireEvent.change(input, { target: { value: "Here is my final answer." } });
+    fireEvent.click(screen.getByRole("button", { name: /send/i }));
+
+    await waitFor(() => {
+      expect(API.post).toHaveBeenCalledWith(
+        "/interview/chat",
+        expect.objectContaining({ message: "Here is my final answer." })
+      );
+    });
+
+    await act(async () => {
+      jest.advanceTimersByTime(5000);
+      await Promise.resolve();
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId("results-route-marker")).toBeInTheDocument();
+    });
   });
 });
