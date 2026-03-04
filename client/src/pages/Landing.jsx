@@ -407,16 +407,12 @@ export default function Landing() {
           </div>
 
           <div className="cta-buttons">
-            <Link to="/signup">
-              <button className="primary-btn glow-effect">
-                Start Free Trial
-                <span className="btn-icon">→</span>
-              </button>
+            <Link to="/signup" className="primary-btn glow-effect">
+              Start Free Trial
+              <span className="btn-icon">→</span>
             </Link>
-            <Link to="/login">
-              <button className="secondary-btn">
-                Sign In
-              </button>
+            <Link to="/login" className="secondary-btn">
+              Sign In
             </Link>
           </div>
 

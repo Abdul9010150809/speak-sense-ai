@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { getAuthToken, getStoredUser, clearAuthSession } from "../utils/authStorage";
@@ -11,6 +11,7 @@ export default function AdvancedNavbar() {
     const [user, setUser] = useState(null);
     const navigate = useNavigate();
     const location = useLocation();
+    const notificationsRef = useRef(null);
 
     const notifications = [
         { id: 1, text: "Your interview feedback is ready", icon: "📊", time: "5 min ago", unread: true },
@@ -19,12 +20,22 @@ export default function AdvancedNavbar() {
     ];
 
     useEffect(() => {
-        const handleScroll = () => {
-            setIsScrolled(window.scrollY > 20);
-        };
+        const handleScroll = () => setIsScrolled(window.scrollY > 20);
         window.addEventListener("scroll", handleScroll);
         return () => window.removeEventListener("scroll", handleScroll);
     }, []);
+
+    // Close notifications when clicking outside
+    useEffect(() => {
+        if (!showNotifications) return;
+        const handleOutsideClick = (e) => {
+            if (notificationsRef.current && !notificationsRef.current.contains(e.target)) {
+                setShowNotifications(false);
+            }
+        };
+        document.addEventListener("mousedown", handleOutsideClick);
+        return () => document.removeEventListener("mousedown", handleOutsideClick);
+    }, [showNotifications]);
 
     useEffect(() => {
         const token = getAuthToken();
@@ -48,6 +59,7 @@ export default function AdvancedNavbar() {
             { name: "Overview", path: "/dashboard", icon: "📊" },
             { name: "Interviews", path: "/planning", icon: "🎙️" },
             { name: "Practice", path: "/practice", icon: "🧠" },
+            { name: "History", path: "/history", icon: "📅" },
             { name: "Resume", path: "/resume-analyzer", icon: "📋" },
             { name: "Questions", path: "/question-bank", icon: "❓" },
             { name: "Feedback", path: "/results", icon: "📝" },
@@ -95,7 +107,7 @@ export default function AdvancedNavbar() {
                     {user ? (
                         <div className="user-controls">
                             {/* Notifications */}
-                            <div className="notifications-container">
+                            <div className="notifications-container" ref={notificationsRef}>
                                 <button
                                     className={`notification-btn ${unreadCount > 0 ? "has-unread" : ""}`}
                                     onClick={() => setShowNotifications(!showNotifications)}

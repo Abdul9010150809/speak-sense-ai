@@ -118,6 +118,9 @@ datasets/
 .turbo/
 storybook-static/
 
+# ── Claude Code ───────────────────────────
+.claude/projects/
+
 # ── 3D Model caches ───────────────────────────────────
 *.glb.cache
 *.gltf.cache
