@@ -65,7 +65,21 @@ export default function PostureChecker({
               playsInline
               muted
             />
-            <div className="posture-preview-guide" aria-hidden="true" />
+            {/* Guide overlay — only shown during/after active check */}
+            {(status === "checking" || status === "ready" || status === "no-person") && (
+              <div className="posture-preview-guide" aria-hidden="true" />
+            )}
+            {/* Placeholder when camera hasn't started yet */}
+            {status === "pending" && (
+              <div className="posture-cam-placeholder" aria-hidden="true">
+                <span className="posture-cam-icon">📷</span>
+                <span className="posture-cam-hint">Click "Check My Posture"<br />to start camera</span>
+              </div>
+            )}
+            {/* Live indicator */}
+            {(status === "checking" || status === "ready") && (
+              <span className="posture-live-dot" aria-hidden="true">● LIVE</span>
+            )}
           </div>
         </div>
 

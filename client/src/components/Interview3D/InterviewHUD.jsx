@@ -76,6 +76,16 @@ export default function InterviewHUD({
             </span>
             <span className="pill-lbl">Clarity</span>
           </div>
+
+          {postureData && (
+            <div className="hud-pill" title="Live posture score">
+              <span className="pill-icon">🧍</span>
+              <span className="pill-val" style={{ color: getGaugeColor(postureData.confidence || 0) }}>
+                {Math.round(postureData.confidence || 0)}%
+              </span>
+              <span className="pill-lbl">Posture</span>
+            </div>
+          )}
         </div>
 
         <button

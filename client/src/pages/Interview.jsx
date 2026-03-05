@@ -717,44 +717,20 @@ export default function Interview() {
   const renderInterviewerPanelCharacter = useCallback(() => {
     if (!selectedCharacter) return null;
 
-    // prefer the standalone avatar system (iframe) when 3D is requested
-    const canUseEmbeddedIframe = use3DScene && characterPackStyle === "illustrated"
-      && !(typeof process !== "undefined" && process.env?.NODE_ENV === "test");
-
-    if (canUseEmbeddedIframe) {
-      return (
-        <iframe
-          ref={characterModuleFrameRef}
-          key={`${selectedCharacter?.id}-${embeddedCharacterRole}`}
-          title={`${selectedCharacter.name} 3D interviewer`}
-          src={`/avatar-system/index.html?embed=1&role=${encodeURIComponent(embeddedCharacterRole)}`}
-          className="ai-panel-3d-frame"
-        />
-      );
-    }
+    const stateClass = isSpeaking ? "is-speaking" : isAiTyping ? "is-thinking" : "";
+    const stateLabel = isSpeaking ? "🎤 Speaking" : isAiTyping ? "💭 Thinking…" : "👂 Listening";
 
     return (
-      <SilentErrorBoundary
-        fallback={
-          <div className="ai-panel-photo">3D Avatar failed to load.</div>
-        }
-      >
-        <InterviewScene3D
-          selectedCharacter={selectedCharacter}
-          characterState={{
-            speaking: isSpeaking,
-            thinking: isAiTyping,
-            posture: characterPosture
-          }}
-          confidenceScore={speechMetrics?.confidence || 0}
-          speechMetrics={speechMetrics}
-          onCharacterReady={() => {
-            // Character model loaded successfully
-          }}
-        />
-      </SilentErrorBoundary>
+      <>
+        <div className={`ai-panel-emoji ${stateClass}`} aria-hidden="true">
+          {selectedCharacter.avatar || "🧑‍💼"}
+        </div>
+        <p className="ai-panel-name">{selectedCharacter.name}</p>
+        <p className="ai-panel-role">{selectedCharacter.role}</p>
+        <span className="ai-panel-status">{stateLabel}</span>
+      </>
     );
-  }, [characterPackStyle, characterPosture, embeddedCharacterRole, isSpeaking, selectedCharacter, speechMetrics, isAiTyping, use3DScene]);
+  }, [isSpeaking, isAiTyping, selectedCharacter]);
 
   const latestAiMessage = useMemo(
     () => messages.filter((m) => m.sender === "ai").slice(-1)[0]?.message || "",
@@ -796,29 +772,7 @@ export default function Interview() {
     };
   }, []);
 
-  useEffect(() => {
-    if (characterPackStyle !== "illustrated") return;
-    const frameWindow = characterModuleFrameRef.current?.contentWindow;
-    if (!frameWindow) return;
-
-    frameWindow.postMessage({ type: "SET_ROLE", role: embeddedCharacterRole }, "*");
-  }, [characterPackStyle, embeddedCharacterRole]);
-
-  useEffect(() => {
-    if (characterPackStyle !== "illustrated") return;
-    const frameWindow = characterModuleFrameRef.current?.contentWindow;
-    if (!frameWindow) return;
-
-    const emotion = isAiTyping || characterPosture === "thinking"
-      ? "strict"
-      : characterPosture === "nodding"
-        ? "impressed"
-        : isSpeaking
-          ? "friendly"
-          : "neutral";
-
-    frameWindow.postMessage({ type: "SET_EMOTION", emotion }, "*");
-  }, [characterPackStyle, characterPosture, isAiTyping, isSpeaking]);
+  // iframe postMessage hooks removed — avatar panel now uses inline CSS animation
 
   useEffect(() => {
     if (typeof window === "undefined" || !("speechSynthesis" in window)) return undefined;
@@ -1065,6 +1019,7 @@ export default function Interview() {
     }
     setLivePostureScore(null);
     setIsStartingInterview(true);
+    stopPostureStream(); // release posture camera before main interview camera starts
 
     try {
       setSelectedCharacter(safeCharacter);
@@ -1852,7 +1807,9 @@ export default function Interview() {
       });
     } finally {
       setIsPostureChecking(false);
-      stopPostureStream();
+      // Do NOT stop the stream here — keep the camera live so the user
+      // can see their posture preview after the check finishes.
+      // The stream is stopped in endInterview / component cleanup.
     }
   };
 
@@ -2232,12 +2189,7 @@ export default function Interview() {
                     />
                   )}
 
-                  <div className="ai-panel-name">{selectedCharacter?.name}</div>
-                  <div className="ai-panel-role">{selectedCharacter?.role}</div>
-                  <div className="ai-panel-status" aria-live="polite">
-                    <span className="status-dot"></span>
-                    <span>{isAiTyping ? "Thinking…" : isSpeaking ? "Speaking…" : "Listening"}</span>
-                  </div>
+                  {/* name / role / status are now rendered inside renderInterviewerPanelCharacter */}
 
                   {/* Grouped panel controls — stacked vertically, no overlap */}
                   <div className="panel-controls">

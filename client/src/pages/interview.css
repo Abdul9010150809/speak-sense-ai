@@ -674,13 +674,20 @@ body {
   background: rgba(255, 255, 255, 0.05);
   border: 2px solid rgba(255, 255, 255, 0.15);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
-  animation: floatAvatar 3.4s ease-in-out infinite;
-  transition: transform 0.3s ease, box-shadow 0.3s ease, filter 0.3s ease;
+  /* Use animation-name so hover can swap only the name, keeping duration/easing */
+  animation-name: floatAvatar;
+  animation-duration: 3.4s;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  transition: box-shadow 0.3s ease, filter 0.3s ease, border-color 0.3s ease;
 }
 
 .character-card:hover .character-emoji-preview,
 .character-card.character-card-hovered .character-emoji-preview {
-  transform: scale(1.12);
+  /* Swap to hover variant that bakes scale into every keyframe frame */
+  animation-name: floatAvatarHover;
+  animation-duration: 2.6s;
+  border-color: rgba(0, 200, 255, 0.45);
   box-shadow: 0 14px 36px rgba(0, 0, 0, 0.5), 0 0 28px rgba(0, 200, 255, 0.3);
   filter: drop-shadow(0 0 14px rgba(0, 200, 255, 0.45));
 }
@@ -693,13 +700,18 @@ body {
   object-fit: cover;
   border: 2px solid rgba(255, 255, 255, 0.28);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.42);
-  animation: floatAvatar 3.4s ease-in-out infinite;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  animation-name: floatAvatar;
+  animation-duration: 3.4s;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  transition: box-shadow 0.3s ease;
 }
 
-.character-card:hover .character-photo {
-  transform: scale(1.08);
-  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.5);
+.character-card:hover .character-photo,
+.character-card.character-card-hovered .character-photo {
+  animation-name: floatAvatarHover;
+  animation-duration: 2.6s;
+  box-shadow: 0 14px 32px rgba(0, 0, 0, 0.5), 0 0 20px rgba(0, 200, 255, 0.25);
 }
 
 /* Illustrated/3D chip inside character preview */
@@ -817,6 +829,12 @@ body {
   display: flex;
   align-items: center;
   gap: 0.85rem;
+  animation: scoreReveal 0.5s ease both;
+}
+
+@keyframes scoreReveal {
+  from { opacity: 0; transform: scale(0.85); }
+  to   { opacity: 1; transform: scale(1); }
 }
 
 .posture-score-ring {
@@ -914,6 +932,53 @@ body {
   border-radius: 45% 45% 40% 40%;
   pointer-events: none;
   animation: guidePulse 1.8s ease-in-out infinite;
+}
+
+/* Camera-off placeholder */
+.posture-cam-placeholder {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: rgba(2, 6, 23, 0.85);
+  border-radius: var(--radius-md);
+  pointer-events: none;
+}
+
+.posture-cam-icon {
+  font-size: 2rem;
+  opacity: 0.55;
+}
+
+.posture-cam-hint {
+  font-size: 0.72rem;
+  color: rgba(148, 163, 184, 0.75);
+  text-align: center;
+  line-height: 1.45;
+}
+
+/* Live badge */
+.posture-live-dot {
+  position: absolute;
+  top: 8px;
+  right: 9px;
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #22c55e;
+  background: rgba(0, 0, 0, 0.55);
+  border-radius: var(--radius-full);
+  padding: 2px 7px;
+  animation: liveBlink 1.6s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes liveBlink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.4; }
 }
 
 /* Avatars Grid
@@ -1191,6 +1256,50 @@ body {
   background: rgba(2, 6, 23, 0.42);
   font-size: 82px;
   margin-bottom: 0.55rem;
+  position: relative;
+  z-index: 2;
+  animation-name: panelAvatarFloat;
+  animation-duration: 4s;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  transition: border-color 0.4s ease, box-shadow 0.4s ease;
+}
+
+/* Speaking state — pulse border + scale */
+.ai-panel-emoji.is-speaking {
+  animation-name: panelAvatarSpeak;
+  animation-duration: 0.55s;
+  border-color: rgba(56, 189, 248, 0.65);
+  box-shadow:
+    0 14px 28px rgba(2, 6, 23, 0.55),
+    0 0 32px rgba(56, 189, 248, 0.35);
+}
+
+/* Thinking state — slow rotation + dim */
+.ai-panel-emoji.is-thinking {
+  animation-name: panelAvatarThink;
+  animation-duration: 2s;
+  border-color: rgba(139, 92, 246, 0.6);
+  box-shadow:
+    0 14px 28px rgba(2, 6, 23, 0.55),
+    0 0 24px rgba(139, 92, 246, 0.3);
+}
+
+@keyframes panelAvatarFloat {
+  0%, 100% { transform: translateY(0)    scale(1); }
+  50%       { transform: translateY(-10px) scale(1.015); }
+}
+
+@keyframes panelAvatarSpeak {
+  0%,  100% { transform: scale(1);    }
+  30%        { transform: scale(1.04); }
+  70%        { transform: scale(0.98); }
+}
+
+@keyframes panelAvatarThink {
+  0%, 100% { transform: translateY(0)   rotate(0deg)   scale(1);    opacity: 1;   }
+  25%      { transform: translateY(-5px) rotate(-1.5deg) scale(1.01); opacity: 0.9; }
+  75%      { transform: translateY(-5px) rotate(1.5deg)  scale(1.01); opacity: 0.9; }
 }
 
 /* Container for all panel control buttons — stacks them vertically */
@@ -2454,10 +2563,22 @@ video.video-off {
   to { transform: rotate(360deg); }
 }
 
-/* Avatar float (used in character cards) */
+/* Avatar float — organic multi-axis motion */
 @keyframes floatAvatar {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-8px); }
+  0%        { transform: translateY(0)     rotate(0deg)    scale(1);    }
+  18%       { transform: translateY(-4px)  rotate(-0.8deg) scale(1.01); }
+  50%       { transform: translateY(-9px)  rotate(0.6deg)  scale(1.02); }
+  78%       { transform: translateY(-4px)  rotate(0.9deg)  scale(1.01); }
+  100%      { transform: translateY(0)     rotate(0deg)    scale(1);    }
+}
+
+/* Avatar float with scale locked at 1.12 for hover state */
+@keyframes floatAvatarHover {
+  0%        { transform: translateY(0)     rotate(0deg)    scale(1.12); }
+  18%       { transform: translateY(-4px)  rotate(-0.6deg) scale(1.13); }
+  50%       { transform: translateY(-9px)  rotate(0.5deg)  scale(1.14); }
+  78%       { transform: translateY(-4px)  rotate(0.7deg)  scale(1.13); }
+  100%      { transform: translateY(0)     rotate(0deg)    scale(1.12); }
 }
 
 /* Neon pulse (border / badge glow) */
