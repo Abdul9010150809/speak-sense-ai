@@ -22,59 +22,75 @@ const createDemoAuthResponse = async (provider) => {
   const normalizedProvider = String(provider || "demo").toLowerCase();
 
   const providerConfig = {
-    google: {
-      name: "Google Demo User",
-      email: "demo.google@speaksense.ai",
-      jobTitle: "google user",
-      authProvider: "google"
-    },
-    github: {
-      name: "GitHub Demo User",
-      email: "demo.github@speaksense.ai",
-      jobTitle: "github user",
-      authProvider: "github"
-    },
-    demo: {
-      name: "Demo User",
-      email: "demo.user@speaksense.ai",
-      jobTitle: "guest user",
-      authProvider: "demo"
-    }
+    google:  { name: "Google Demo User",  email: "demo.google@speaksense.ai",  jobTitle: "Software Engineer", authProvider: "google" },
+    github:  { name: "GitHub Demo User",  email: "demo.github@speaksense.ai",  jobTitle: "Software Engineer", authProvider: "github" },
+    demo:    { name: "Demo User",         email: "demo.user@speaksense.ai",    jobTitle: "Software Engineer", authProvider: "demo"   }
   };
 
   const selected = providerConfig[normalizedProvider] || providerConfig.demo;
-  let user = await User.findOne({ email: selected.email });
 
-  if (!user) {
-    const generatedPassword = `${selected.authProvider}Demo@1234`;
-    const hashed = await bcrypt.hash(generatedPassword, 10);
+  // Baseline payload — used when DB is unavailable so demo always works
+  const baseUser = {
+    _id: `demo_${selected.authProvider}`,
+    name: selected.name,
+    email: selected.email,
+    industry: "Software Development",
+    experience: "3-5 years",
+    company: "SpeakSense Demo",
+    jobTitle: selected.jobTitle,
+    authProvider: selected.authProvider,
+    isDemo: true
+  };
 
-    user = await User.create({
-      name: selected.name,
-      email: selected.email,
-      password: hashed,
-      company: "Demo",
-      jobTitle: selected.jobTitle,
-      industry: "Software Development",
-      authProvider: selected.authProvider
-    });
+  let user = baseUser;
+
+  try {
+    const dbUser = await User.findOne({ email: selected.email });
+    if (dbUser) {
+      user = dbUser;
+    } else {
+      const hashed = await bcrypt.hash(`${selected.authProvider}Demo@1234`, 10);
+      user = await User.create({
+        name: selected.name,
+        email: selected.email,
+        password: hashed,
+        company: baseUser.company,
+        jobTitle: selected.jobTitle,
+        industry: baseUser.industry,
+        experience: baseUser.experience,
+        authProvider: selected.authProvider
+      });
+    }
+  } catch (dbErr) {
+    // MongoDB unreachable — fall back to in-memory demo without persistence
+    console.warn(`[demo-auth] DB unavailable (${dbErr.message}), using in-memory demo`);
   }
 
-  const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
-    expiresIn: "7d",
-  });
+  // Embed user profile in JWT so /me can serve it even when DB is down
+  const tokenPayload = {
+    id:         String(user._id),
+    name:       user.name       || baseUser.name,
+    email:      user.email      || baseUser.email,
+    industry:   user.industry   || baseUser.industry,
+    experience: user.experience || baseUser.experience,
+    company:    user.company    || baseUser.company,
+    jobTitle:   user.jobTitle   || baseUser.jobTitle,
+    isDemo:     user.isDemo     || false
+  };
+
+  const token = jwt.sign(tokenPayload, process.env.JWT_SECRET, { expiresIn: "7d" });
 
   return {
     message: `${selected.authProvider} demo login successful`,
     token,
     user: {
-      id: user._id,
-      name: user.name,
-      email: user.email,
-      industry: user.industry,
-      experience: user.experience,
-      company: user.company,
-      jobTitle: user.jobTitle
+      id:         tokenPayload.id,
+      name:       tokenPayload.name,
+      email:      tokenPayload.email,
+      industry:   tokenPayload.industry,
+      experience: tokenPayload.experience,
+      company:    tokenPayload.company,
+      jobTitle:   tokenPayload.jobTitle
     }
   };
 };
@@ -233,36 +249,76 @@ router.post("/demo", async (_req, res) => {
 });
 
 router.get("/me", async (req, res) => {
+  const authHeader = req.headers.authorization || "";
+  const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
+
+  if (!token) {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
+
+  let decoded;
   try {
-    const authHeader = req.headers.authorization || "";
-    const token = authHeader.startsWith("Bearer ") ? authHeader.slice(7) : null;
+    decoded = jwt.verify(token, process.env.JWT_SECRET);
+  } catch {
+    return res.status(401).json({ message: "Unauthorized" });
+  }
 
-    if (!token) {
-      return res.status(401).json({ message: "Unauthorized" });
-    }
+  // Demo tokens (or any token with embedded profile) can skip the DB call
+  const isDemoId = String(decoded.id || "").startsWith("demo_");
+  if (isDemoId || decoded.isDemo) {
+    return res.status(200).json({
+      user: {
+        id:           decoded.id,
+        name:         decoded.name         || "Demo User",
+        email:        decoded.email        || "demo@speaksense.ai",
+        industry:     decoded.industry     || "Software Development",
+        experience:   decoded.experience   || "",
+        company:      decoded.company      || "SpeakSense Demo",
+        jobTitle:     decoded.jobTitle     || "Software Engineer",
+        interests:    decoded.interests    || [],
+        authProvider: decoded.authProvider || "demo"
+      }
+    });
+  }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+  // Normal DB-backed user
+  try {
     const user = await User.findById(decoded.id).lean();
-
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-
     return res.status(200).json({
       user: {
-        id: user._id,
-        name: user.name,
-        email: user.email,
-        industry: user.industry || "",
-        experience: user.experience || "",
-        company: user.company || "",
-        jobTitle: user.jobTitle || "",
-        interests: user.interests || [],
+        id:           user._id,
+        name:         user.name,
+        email:        user.email,
+        industry:     user.industry     || "",
+        experience:   user.experience   || "",
+        company:      user.company      || "",
+        jobTitle:     user.jobTitle     || "",
+        interests:    user.interests    || [],
         authProvider: user.authProvider || "local"
       }
     });
-  } catch (error) {
-    return res.status(401).json({ message: "Unauthorized" });
+  } catch (dbErr) {
+    console.error("[/me] DB error:", dbErr.message);
+    // If DB is down but the token has embedded profile data, serve it
+    if (decoded.name && decoded.email) {
+      return res.status(200).json({
+        user: {
+          id:           decoded.id,
+          name:         decoded.name,
+          email:        decoded.email,
+          industry:     decoded.industry   || "",
+          experience:   decoded.experience || "",
+          company:      decoded.company    || "",
+          jobTitle:     decoded.jobTitle   || "",
+          interests:    [],
+          authProvider: decoded.authProvider || "local"
+        }
+      });
+    }
+    return res.status(503).json({ message: "Database unavailable" });
   }
 });
 
