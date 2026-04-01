@@ -208,7 +208,8 @@ export class AvatarLoader {
         leftArm: leftArm,
         rightArm: rightArm,
         leftEye: leftEye,
-        rightEye: rightEye
+        rightEye: rightEye,
+        mouth: mouth
       }
     };
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 import { AnimationController } from './AnimationController';
 import { BehaviorIntelligence } from './BehaviorIntelligence';
@@ -21,11 +21,15 @@ export default function InterviewScene3D({
   const charactersRef = useRef([]);
   const animationControllerRef = useRef(null);
   const behaviorIntelligenceRef = useRef(null);
+  const avatarLoaderRef = useRef(null);
 
   // Refs for tracking mutable prop values so animation loop doesn't need to rebuild
   const stateRef = useRef(characterState);
   const confidenceRef = useRef(confidenceScore);
   const metricsRef = useRef(speechMetrics);
+  // Stable ref so the character-loading effect doesn't re-run when the parent
+  // re-renders and passes a new inline arrow (e.g. onCharacterReady={() => {}})
+  const onCharacterReadyRef = useRef(onCharacterReady);
 
   const [sceneReady, setSceneReady] = useState(false);
 
@@ -34,7 +38,8 @@ export default function InterviewScene3D({
     stateRef.current = characterState;
     confidenceRef.current = confidenceScore;
     metricsRef.current = speechMetrics;
-  }, [characterState, confidenceScore, speechMetrics]);
+    onCharacterReadyRef.current = onCharacterReady;
+  }, [characterState, confidenceScore, speechMetrics, onCharacterReady]);
 
   // Main Scene Initialization (Run Once on Mount)
   useEffect(() => {
@@ -210,15 +215,20 @@ export default function InterviewScene3D({
         cameraRef.current.position.y = 2.5 - easeInOutQuad * 0.5;
       }
 
+      // Advance AvatarLoader fade transitions (must run every frame)
+      avatarLoaderRef.current?.update(deltaTime);
+
       // Update characters
       const chars = charactersRef.current;
       chars.forEach((character, index) => {
-        // Initialize animation state once per character
-        if (!character.userData.animations) {
+        // Initialize animation state once per character; handle avatars that
+        // already have a partial userData.animations (e.g. from AvatarLoader fallback)
+        if (!character.userData.animations || character.userData.animations.nextBlinkAt === undefined) {
+          const existing = character.userData.animations || {};
           character.userData.animations = {
-            idleTime: 0,
-            blinkTimer: 0,
-            nextBlinkAt: 2.5 + Math.random() * 3.5, // pre-computed, stable per cycle
+            idleTime: existing.idleTime ?? 0,
+            blinkTimer: existing.blinkTimer ?? 0,
+            nextBlinkAt: 2.5 + Math.random() * 3.5,
             isBlinking: false,
             blinkProgress: 0
           };
@@ -228,8 +238,8 @@ export default function InterviewScene3D({
 
         // ── Idle breathing ─────────────────────────────────────────
         anim.idleTime += deltaTime;
-        const breathAmount = Math.sin(anim.idleTime * 2) * 0.025;
-        const breathSway   = Math.cos(anim.idleTime * 1.5) * 0.015;
+        const breathAmount = Math.sin(anim.idleTime * 2) * 0.04;
+        const breathSway   = Math.cos(anim.idleTime * 1.5) * 0.02;
 
         if (character.userData.meshes?.torso) {
           character.userData.meshes.torso.scale.y    = 1 + breathAmount;
@@ -237,16 +247,27 @@ export default function InterviewScene3D({
           character.userData.meshes.torso.rotation.z = breathSway;
         }
 
-        // ── Head idle bob ───────────────────────────────────────────
+        // ── Head idle bob + emotion + state compositing ─────────────
         if (character.userData.meshes?.head) {
+          const head = character.userData.meshes.head;
+          const isSpeaking = stateRef.current?.speaking === true;
+          const isThinking = stateRef.current?.thinking === true;
+
+          // Idle sway
           const idleRotX = Math.sin(anim.idleTime * 1.2) * 0.02;
           const idleRotZ = Math.sin(anim.idleTime * 1.5) * 0.03;
-          // Gentle lerp so blendshape-driven rotation from AnimationController
-          // can smoothly blend back to idle without fighting
-          character.userData.meshes.head.rotation.x =
-            THREE.MathUtils.lerp(character.userData.meshes.head.rotation.x, idleRotX, 0.04);
-          character.userData.meshes.head.rotation.z =
-            THREE.MathUtils.lerp(character.userData.meshes.head.rotation.z, idleRotZ, 0.04);
+          // Speaking nod – extra pitch oscillation
+          const speakNodX = isSpeaking ? Math.sin(anim.idleTime * 4.5) * 0.04 : 0;
+          // Thinking tilt – sustained z offset
+          const thinkTiltZ = isThinking ? 0.09 : 0;
+          // Emotion offsets written by AnimationController (1-frame lag is fine)
+          const emotionRotX = head.userData.emotionRotX ?? 0;
+          const emotionRotZ = head.userData.emotionRotZ ?? 0;
+
+          const targetX = idleRotX + speakNodX + emotionRotX;
+          const targetZ = idleRotZ + thinkTiltZ + emotionRotZ;
+          head.rotation.x = THREE.MathUtils.lerp(head.rotation.x, targetX, 0.06);
+          head.rotation.z = THREE.MathUtils.lerp(head.rotation.z, targetZ, 0.06);
         }
 
         // ── Blink animation (stable pre-computed interval) ──────────
@@ -274,15 +295,44 @@ export default function InterviewScene3D({
             anim.nextBlinkAt   = 2.0 + Math.random() * 4.0; // new interval after blink
           }
         } else {
-          // Restore eye scale to 1 between blinks
+          // Between blinks: use emotion-driven squint scale (default 1 = fully open)
+          const lOpen = character.userData.meshes?.leftEye?.userData.emotionSquintY ?? 1;
+          const rOpen = character.userData.meshes?.rightEye?.userData.emotionSquintY ?? 1;
           if (character.userData.meshes?.leftEye)
-            character.userData.meshes.leftEye.scale.y  = 1;
+            character.userData.meshes.leftEye.scale.y  = lOpen;
           if (character.userData.meshes?.rightEye)
-            character.userData.meshes.rightEye.scale.y = 1;
+            character.userData.meshes.rightEye.scale.y = rOpen;
         }
 
-        const angle = (index * Math.PI * 2) / (chars.length - 1 || 1);
-        if (index < 3) {
+        // ── Speaking: arm gestures + mouth scale ────────────────────
+        {
+          const isSpeaking = stateRef.current?.speaking === true;
+          const speakPhase  = Math.sin(anim.idleTime * 3.5);
+
+          if (character.userData.meshes?.leftArm) {
+            const targetRot = isSpeaking ? speakPhase * 0.1 : 0;
+            character.userData.meshes.leftArm.rotation.x =
+              THREE.MathUtils.lerp(character.userData.meshes.leftArm.rotation.x, -targetRot, 0.08);
+          }
+          if (character.userData.meshes?.rightArm) {
+            const targetRot = isSpeaking ? speakPhase * 0.1 : 0;
+            character.userData.meshes.rightArm.rotation.x =
+              THREE.MathUtils.lerp(character.userData.meshes.rightArm.rotation.x, targetRot, 0.08);
+          }
+
+          // Mouth open/close while speaking
+          if (character.userData.meshes?.mouth) {
+            const targetScaleY = isSpeaking
+              ? 1 + Math.abs(Math.sin(anim.idleTime * 8)) * 2
+              : 1;
+            character.userData.meshes.mouth.scale.y =
+              THREE.MathUtils.lerp(character.userData.meshes.mouth.scale.y, targetScaleY, 0.2);
+          }
+        }
+
+        // Panel mode: fan characters out; single character faces the camera (rotation.y = 0)
+        if (chars.length > 1 && index < 3) {
+          const angle = (index * Math.PI * 2) / (chars.length - 1);
           character.rotation.y = -angle + Math.PI / 2;
         }
       });
@@ -307,6 +357,11 @@ export default function InterviewScene3D({
     return () => {
       window.removeEventListener('resize', handleResize);
       cancelAnimationFrame(animationFrameId);
+      animationControllerRef.current?.dispose();
+      animationControllerRef.current = null;
+      behaviorIntelligenceRef.current?.dispose();
+      behaviorIntelligenceRef.current = null;
+      avatarLoaderRef.current = null;
       if (rendererRef.current && containerRef.current) {
         containerRef.current.removeChild(rendererRef.current.domElement);
       }
@@ -327,6 +382,7 @@ export default function InterviewScene3D({
     charactersRef.current = [];
 
     const loader = new AvatarLoader(sceneRef.current);
+    avatarLoaderRef.current = loader;
 
     const deriveRole = (character) => {
       const mode = String(character?.role || "").toLowerCase();
@@ -462,26 +518,40 @@ export default function InterviewScene3D({
       behaviorIntelligenceRef.current = behaviorIntelligence;
     };
 
+    // Cancellation flag — prevents stale async callbacks from updating refs
+    // after the effect has been cleaned up (e.g. when selectedCharacter changes)
+    let cancelled = false;
+
     if (selectedCharacter) {
       const roleKey = deriveRole(selectedCharacter);
+      // NOTE: loader.loadAvatar() already calls scene.add(root) internally —
+      // do NOT add root to the scene again here or it will be double-added.
       loader.loadAvatar(roleKey, selectedCharacter).then(({ root }) => {
-        sceneRef.current.add(root);
+        if (cancelled) return;
         charactersRef.current = [root];
         const animationController = new AnimationController(charactersRef.current);
         animationControllerRef.current = animationController;
         const behaviorIntelligence = new BehaviorIntelligence(charactersRef.current, animationController);
         behaviorIntelligenceRef.current = behaviorIntelligence;
-        onCharacterReady?.(true);
+        onCharacterReadyRef.current?.(true);
       }).catch(() => {
-        // if glTF load fails, use a generic shape
+        if (cancelled) return;
         addDefaultCharacter('hr');
-        onCharacterReady?.(false);
+        onCharacterReadyRef.current?.(false);
       });
     } else {
       addDefaultCharacter('hr');
-      onCharacterReady?.(false);
+      onCharacterReadyRef.current?.(false);
     }
-  }, [selectedCharacter, sceneReady, onCharacterReady]);
+
+    return () => {
+      cancelled = true;
+      animationControllerRef.current?.dispose();
+      animationControllerRef.current = null;
+      behaviorIntelligenceRef.current?.dispose();
+      behaviorIntelligenceRef.current = null;
+    };
+  }, [selectedCharacter, sceneReady]);
 
   return (
     <div className="interview-scene-3d">

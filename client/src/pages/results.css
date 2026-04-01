@@ -18,7 +18,8 @@ body {
   min-height: 100vh;
   position: relative;
   background: radial-gradient(circle at 10% 20%, #0a1928 0%, #030614 100%);
-  padding: 1.5rem;
+  /* navbar is position:fixed; height:80px — push content below it */
+  padding: calc(80px + 1.5rem) 1.5rem 1.5rem;
 }
 
 /* Background Elements */

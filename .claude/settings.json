@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(wc -l /home/abdul/Documents/CAREER/speak-sense-ai/client/src/**/*.jsx /home/abdul/Documents/CAREER/speak-sense-ai/client/src/**/*.js)",
+      "Bash(wc -l /home/abdul/Documents/CAREER/speak-sense-ai/server/**/*.js)",
+      "Bash(npx react-scripts build)",
+      "Bash(SKIP_PREFLIGHT_CHECK=true npx react-scripts build)"
+    ]
+  }
+}

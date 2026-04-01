@@ -132,19 +132,18 @@ export class AnimationController {
 
     const { head, leftEye, rightEye } = character.userData.meshes;
 
-    // Eye squinting – applied directly (not accumulated)
+    // Store emotion offsets in userData so the scene loop can composite
+    // them with idle animations without overwriting blink / head-bob each frame.
     const eyeSquint = this.blendshapes.eyeSquint * 0.3;
-    if (leftEye)  leftEye.scale.y  = Math.max(0.2, 1 - eyeSquint);
-    if (rightEye) rightEye.scale.y = Math.max(0.2, 1 - eyeSquint);
+    const squintScale = Math.max(0.2, 1 - eyeSquint);
+    if (leftEye)  leftEye.userData.emotionSquintY  = squintScale;
+    if (rightEye) rightEye.userData.emotionSquintY = squintScale;
 
     if (head) {
-      // Use absolute target rotation values instead of accumulating with +=
-      const browTilt  = (this.blendshapes.browRaise - this.blendshapes.browLower) * 0.05;
-      const headTilt  = (this.blendshapes.headTilt ?? 0) * 0.2;
-
-      // Clamp to prevent extreme values
-      head.rotation.x = THREE.MathUtils.clamp(browTilt, -0.3, 0.3);
-      head.rotation.z = THREE.MathUtils.clamp(headTilt, -0.4, 0.4);
+      const browTilt = (this.blendshapes.browRaise - this.blendshapes.browLower) * 0.05;
+      const headTilt = (this.blendshapes.headTilt ?? 0) * 0.2;
+      head.userData.emotionRotX = THREE.MathUtils.clamp(browTilt, -0.3, 0.3);
+      head.userData.emotionRotZ = THREE.MathUtils.clamp(headTilt, -0.4, 0.4);
     }
   }
 

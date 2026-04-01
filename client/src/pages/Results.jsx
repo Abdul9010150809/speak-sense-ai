@@ -293,6 +293,7 @@ export default function Results() {
   const peakConfidence = confidenceLevels.length ? Math.max(...confidenceLevels) : 0;
   const lowestConfidence = confidenceLevels.length ? Math.min(...confidenceLevels) : 0;
 
+  // Load interview data from storage once on mount / when route state changes
   useEffect(() => {
     try {
       const summary = JSON.parse(localStorage.getItem("latestInterviewSummary") || "null");
@@ -313,7 +314,10 @@ export default function Results() {
       setLatestReport(null);
       setDbSaveStatus("unknown");
     }
+  }, [location.state]);
 
+  // Animate scores whenever the computed results change (kept separate to avoid loop)
+  useEffect(() => {
     const timer = setTimeout(() => {
       setAnimatedScores({
         overall: results.overall.score,
@@ -324,7 +328,7 @@ export default function Results() {
       });
     }, 500);
     return () => clearTimeout(timer);
-  }, [location.state, results]);
+  }, [results.overall.score, results.confidence.score, results.speaking.speed, results.grammar.score, results.sentenceStructure.score]);
 
   const getCorrectnessBadge = (question) => {
     const label = question?.correctnessLabel;

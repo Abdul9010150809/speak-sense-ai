@@ -2172,7 +2172,24 @@ export default function Interview() {
                 <div className="ai-avatar-panel">
                   <div className="panel-bg-lines"></div>
 
-                  {renderInterviewerPanelCharacter()}
+                  {/* 3D immersive scene — replaces the emoji avatar when enabled */}
+                  {use3DScene && selectedCharacter ? (
+                    <SilentErrorBoundary>
+                      <InterviewScene3D
+                        selectedCharacter={selectedCharacter}
+                        characterState={{
+                          speaking: isSpeaking,
+                          thinking: isAiTyping,
+                          posture: characterPosture
+                        }}
+                        confidenceScore={confidenceScore}
+                        speechMetrics={speechMetrics}
+                        onCharacterReady={() => {}}
+                      />
+                    </SilentErrorBoundary>
+                  ) : (
+                    renderInterviewerPanelCharacter()
+                  )}
 
                   {/* 3D Scene HUD Overlay */}
                   {use3DScene && (
